@@ -43,7 +43,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   }
   
   if (allowedRoles.length > 0 && !allowedRoles.some(role => hasRole(role))) {
-    return <Navigate to="/dashboard" replace />;  
+    return <Navigate to="/dashboard" replace />;
   }
   
   return children;
@@ -62,25 +62,54 @@ const UserRoute = ({ children }) => (
   </ProtectedRoute>
 );
 
-// Public Route - redirects to dashboard if already logged in
+// Public Route 
 const PublicRoute = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   
   if (loading) {
     return <div className="loading-screen">Loading...</div>;
   }
   
-  if (user) {
-    return <Navigate to="/dashboard" replace />;  
+  if (user && profile) {
+    // Redirect based on role
+    if (profile.role === 'admin') {
+      return <Navigate to="/admin" replace />;
+    } else if (profile.role === 'librarian') {
+      return <Navigate to="/librarian" replace />;
+    } else {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
   
   return children;
 };
 
+// Role-based redirect component for root path
+const RootRedirect = () => {
+  const { user, profile, loading } = useAuth();
+  
+  if (loading) {
+    return <div className="loading-screen">Loading...</div>;
+  }
+  
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+  
+  // Redirect based on role
+  if (profile?.role === 'admin') {
+    return <Navigate to="/admin" replace />;
+  } else if (profile?.role === 'librarian') {
+    return <Navigate to="/librarian" replace />;
+  } else {
+    return <Navigate to="/dashboard" replace />;
+  }
+};
+
 function App() {
   const { highContrast, fontSize, fontFamily, lineSpacing, reduceMotion } = useAccessibility();
 
-  // Apply accessibility settings to body
+ 
   React.useEffect(() => {
     document.body.className = '';
     if (highContrast) document.body.classList.add('high-contrast');
@@ -98,7 +127,7 @@ function App() {
           {/* PUBLIC ROUTES */}
           <Route path="/" element={<HomePage />} />
           
-          {/* Auth routes - redirect to dashboard if logged in */}
+          {/* Auth routes */}
           <Route path="/login" element={
             <PublicRoute>
               <Login />
@@ -124,7 +153,6 @@ function App() {
             <Route index element={<UserDashboard />} />
           </Route>
 
-          {/* Nested routes for dashboard sections */}
           <Route path="/dashboard/books" element={
             <UserRoute>
               <Layout />
@@ -198,20 +226,21 @@ function App() {
             <Route index element={<BookManagement />} />
           </Route>
 
-          {/* Catch-all route for 404 handling */}
-          <Route path="*" element={
-            <AuthRedirect />
-          } />
+          {/* Librarian Routes - Add these */}
+          <Route path="/librarian" element={
+            <ProtectedRoute allowedRoles={['librarian', 'admin']}>
+              <Layout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<AdminDashboard />} /> 
+          </Route>
+
+          {/* Root redirect - role-based */}
+          <Route path="*" element={<RootRedirect />} />
         </Routes>
       </div>
     </Router>
   );
 }
-
-// Helper component for 404 handling
-const AuthRedirect = () => {
-  const { user } = useAuth();
-  return user ? <Navigate to="/dashboard" replace /> : <Navigate to="/" replace />;
-};
 
 export default App;
