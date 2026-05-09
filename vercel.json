@@ -3,9 +3,5 @@
   "outputDirectory": "build",
   "devCommand": "npm start",
   "installCommand": "npm install",
-  "framework": "create-react-app",
-  "env": {
-    "REACT_APP_SUPABASE_URL": "@react_app_supabase_url",
-    "REACT_APP_SUPABASE_ANON_KEY": "@react_app_supabase_anon_key"
-  }
+  "framework": "create-react-app"
 }
