@@ -1,8 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'https://lkcaqjdznezijmutmsyo.supabase.co'
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrY2FxamR6bmV6aWptdXRtc3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MzE5NDIsImV4cCI6MjA4NzEwNzk0Mn0.5m_hfLa1s2URrniymoR0BIFN_JesF0e1473P4iyfj_k'
-
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL
+const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY 
 // Create client with lock options disabled
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -76,56 +75,105 @@ export const db = {
   },
 
   // Reading Progress
-  async getReadingProgress(userId, bookId) {
-    const { data, error } = await supabase
-      .from('reading_progress')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('book_id', bookId)
-      .single()
-    return { data, error }
+ 
+  getReadingProgress: async (userId) => {
+    try {
+      const { data, error } = await supabase
+        .from('reading_progress')
+        .select('*, books(id, title, author, cover_url)')
+        .eq('user_id', userId)
+        .order('last_read', { ascending: false });
+      
+      if (error) throw error;
+      if (DEBUG) console.log('📊 Progress fetched:', data?.length);
+      return data || [];
+    } catch (e) {
+      console.error('❌ Error fetching progress:', e);
+      return [];
+    }
   },
 
-  async updateReadingProgress(userId, bookId, progress) {
-    const { data, error } = await supabase
-      .from('reading_progress')
-      .upsert({ 
-        user_id: userId, 
-        book_id: bookId,
-        ...progress,
-        last_read: new Date()
-      })
-    return { data, error }
+  updateReadingProgress: async (userId, bookId, progress) => {
+    try {
+      if (DEBUG) console.log('📚 Saving progress:', { userId, bookId, progress });
+      
+      // Use upsert with the unique constraint
+      const { data, error } = await supabase
+        .from('reading_progress')
+        .upsert(
+          { 
+            user_id: userId, 
+            book_id: bookId, 
+            last_position: progress.last_position,
+            percentage: progress.percentage,
+            last_read: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          { 
+            onConflict: 'user_id,book_id',
+            ignoreDuplicates: false 
+          }
+        )
+        .select();
+      
+      if (error) {
+        console.error('❌ Upsert error:', error);
+        throw error;
+      }
+      
+      if (DEBUG) console.log('✅ Progress saved:', data);
+      return data?.[0];
+    } catch (e) {
+      console.error('❌ Progress save error:', e);
+      // Fallback to mock for development
+      if (DEBUG) console.log('⚠️ Using mock progress save');
+      const existing = mockData.reading_progress.find(p => p.user_id === userId && p.book_id === bookId);
+      if (existing) {
+        Object.assign(existing, progress, { last_read: new Date().toISOString() });
+        return existing;
+      } else {
+        const newProgress = { 
+          id: Date.now().toString(), 
+          user_id: userId, 
+          book_id: bookId, 
+          ...progress, 
+          last_read: new Date().toISOString(),
+          books: mockData.books.find(b => b.id === bookId)
+        };
+        mockData.reading_progress.push(newProgress);
+        return newProgress;
+      }
+    }
   },
 
-  // Bookmarks
-  async getBookmarks(userId) {
-    const { data, error } = await supabase
-      .from('bookmarks')
-      .select(`
-        *,
-        books (*)
-      `)
-      .eq('user_id', userId)
-    return { data, error }
-  },
+    // Bookmarks
+    async getBookmarks(userId) {
+      const { data, error } = await supabase
+        .from('bookmarks')
+        .select(`
+          *,
+          books (*)
+        `)
+        .eq('user_id', userId)
+      return { data, error }
+    },
 
-  async addBookmark(userId, bookId, location, note = '') {
-    const { data, error } = await supabase
-      .from('bookmarks')
-      .insert({ 
-        user_id: userId, 
-        book_id: bookId, 
-        location, 
-        note 
-      })
-    return { data, error }
+    async addBookmark(userId, bookId, location, note = '') {
+      const { data, error } = await supabase
+        .from('bookmarks')
+        .insert({ 
+          user_id: userId, 
+          book_id: bookId, 
+          location, 
+          note 
+        })
+      return { data, error }
+    }
   }
-}
 
 // Add this export
 export const storage = {
-  supabase, // Export the client for storage operations
+  supabase, 
   
   uploadBookFile: async (file, bookId, format) => {
     const filePath = `${format}/${bookId}/${file.name}`;
