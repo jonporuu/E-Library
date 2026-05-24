@@ -8,6 +8,7 @@ import HomePage from './components/home/HomePage';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import ForgotPassword from './components/auth/ForgotPassword';
+import UpdatePassword from './components/auth/UpdatePassword';
 
 // Layout
 import Layout from './components/common/Layout';
@@ -143,6 +144,8 @@ function App() {
               <ForgotPassword />
             </PublicRoute>
           } />
+          <Route path="/update-password" element={<UpdatePassword />} />
+          
 
           {/* PROTECTED USER ROUTES */}
           <Route path="/dashboard" element={

@@ -4,7 +4,7 @@ const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
 const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
 // Debug mode - set to false in production
-const DEBUG = true;
+const DEBUG = false;
 
 // Generate a simple UUID-like string for mock data
 const generateMockId = () => {
@@ -201,24 +201,29 @@ export const db = {
   },
   
   updateBook: async (id, updates) => {
-    try {
-      const { data, error } = await supabase
-        .from('books')
-        .update(updates)
-        .eq('id', id)
-        .select();
-      
-      if (error) throw error;
-      return data[0];
-    } catch (e) {
-      if (DEBUG) console.log('⚠️ Mock update book:', id);
-      const index = mockData.books.findIndex(b => b.id === id);
-      if (index !== -1) {
-        mockData.books[index] = { ...mockData.books[index], ...updates };
-        return mockData.books[index];
-      }
+  try {
+    console.log('Updating book:', id, updates);
+    const { data, error } = await supabase
+      .from('books')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select();
+    
+    if (error) {
+      console.error('Update error:', error);
+      throw error;
     }
-  },
+    
+    console.log('Update successful:', data);
+    return data?.[0];
+  } catch (e) {
+    console.error('Error in updateBook:', e);
+    throw e;
+  }
+},
   
   deleteBook: async (id) => {
     try {

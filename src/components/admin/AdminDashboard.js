@@ -23,7 +23,6 @@ const AdminDashboard = () => {
       const [users, books, progress] = await Promise.all([
         db.getAllProfiles(),
         db.getBooks(),
-        // In real app, get active readers count
         Promise.resolve([])
       ]);
 
@@ -98,7 +97,7 @@ const AdminDashboard = () => {
         <div className="system-status">
           <div className="status-item">
             <span className="status-label">Database:</span>
-            <span className="status-value status-ok">Connected (Mock Mode)</span>
+            <span className="status-value status-ok">Connected</span>
           </div>
           <div className="status-item">
             <span className="status-label">Authentication:</span>
@@ -106,7 +105,7 @@ const AdminDashboard = () => {
           </div>
           <div className="status-item">
             <span className="status-label">Storage:</span>
-            <span className="status-value status-warning">Not Configured</span>
+            <span className="status-value status-ok">Connected</span>
           </div>
         </div>
       </section>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../../services/supabaseClient';
 import { useAccessibility } from '../../contexts/AccessibilityContext';
 
 const ForgotPassword = () => {
@@ -8,6 +9,7 @@ const ForgotPassword = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { speak } = useAccessibility();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,12 +18,26 @@ const ForgotPassword = () => {
     setLoading(true);
 
     try {
-      // In a real app, call Supabase auth reset
-      // await supabase.auth.resetPasswordForEmail(email);
-      setMessage('Password reset instructions have been sent to your email.');
+      // Get the current URL for redirect
+      const redirectUrl = `${window.location.origin}/update-password`;
+      
+      // Send password reset email via Supabase
+      const { data, error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl,
+      });
+
+      if (resetError) throw resetError;
+
+      setMessage('Password reset instructions have been sent to your email. Please check your inbox and spam folder.');
       speak('Password reset instructions sent. Please check your email.');
+      
+      // Clear email field after successful send
+      setEmail('');
+      
     } catch (err) {
-      setError('Failed to send reset instructions. Please try again.');
+      console.error('Password reset error:', err);
+      setError(err.message || 'Failed to send reset instructions. Please try again.');
+      speak('Failed to send reset instructions');
     } finally {
       setLoading(false);
     }
@@ -58,6 +74,7 @@ const ForgotPassword = () => {
                   required
                   autoComplete="email"
                   autoFocus
+                  placeholder="your@email.com"
                 />
               </div>
 
@@ -73,7 +90,7 @@ const ForgotPassword = () => {
           )}
 
           <div className="auth-links">
-            <Link to="/login">Back to Sign In</Link>
+            <Link to="/login">← Back to Sign In</Link>
           </div>
         </div>
       </div>

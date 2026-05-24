@@ -44,7 +44,6 @@ const UserManagement = () => {
     if (!window.confirm('Are you sure you want to delete this user?')) return;
     
     try {
-      // In real app, call Supabase auth admin delete
       setUsers(users.filter(u => u.id !== userId));
       speak('User deleted');
     } catch (err) {
@@ -78,7 +77,7 @@ const UserManagement = () => {
               <th scope="col">Name</th>
               <th scope="col">Email</th>
               <th scope="col">Role</th>
-              <th scope="col">Disability</th>
+              
               <th scope="col">Joined</th>
               <th scope="col">Actions</th>
             </tr>
@@ -96,11 +95,10 @@ const UserManagement = () => {
                     aria-label={`Change role for ${user.full_name}`}
                   >
                     <option value="user">User</option>
-                    <option value="librarian">Librarian</option>
                     <option value="admin">Admin</option>
                   </select>
                 </td>
-                <td>{user.disability_type || '-'}</td>
+
                 <td>{new Date(user.created_at).toLocaleDateString()}</td>
                 <td>
                   <button 

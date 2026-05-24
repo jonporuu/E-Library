@@ -1,23 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../services/supabaseClient';
 import { db } from '../../services/supabaseClient';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { useAccessibility } from '../../contexts/AccessibilityContext';
 
 const Profile = () => {
-  const { user, profile, updateProfile } = useAuth();
+  const { user, profile } = useAuth();
   const { speak } = useAccessibility();
   const [editing, setEditing] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
   const [formData, setFormData] = useState({});
+  const [passwordData, setPasswordData] = useState({
+    newPassword: '',
+    confirmPassword: ''
+  });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('');
 
   useEffect(() => {
     if (profile) {
       setFormData({
-        fullName: profile.full_name || '',
-        disabilityType: profile.disability_type || '',
-        inputPreference: profile.input_preference || 'standard'
+        fullName: profile.full_name || ''
       });
     }
   }, [profile]);
@@ -27,23 +32,88 @@ const Profile = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData(prev => ({ ...prev, [name]: value }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
+    setMessageType('');
 
     try {
       await db.updateProfile(user.id, {
-        full_name: formData.fullName,
-        disability_type: formData.disabilityType || null,
-        input_preference: formData.inputPreference
+        full_name: formData.fullName
       });
+      
       setMessage('Profile updated successfully');
+      setMessageType('success');
       speak('Profile updated successfully');
       setEditing(false);
+      
+      setTimeout(() => {
+        setMessage('');
+        setMessageType('');
+      }, 3000);
     } catch (error) {
       setMessage('Failed to update profile');
+      setMessageType('error');
       speak('Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+    setMessageType('');
+
+    if (passwordData.newPassword.length < 6) {
+      setMessage('New password must be at least 6 characters long');
+      setMessageType('error');
+      speak('Password too short');
+      setLoading(false);
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setMessage('New passwords do not match');
+      setMessageType('error');
+      speak('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
+
+      if (error) throw error;
+
+      setMessage('Password changed successfully! Please use your new password next time you log in.');
+      setMessageType('success');
+      speak('Password changed successfully');
+      
+      setPasswordData({
+        newPassword: '',
+        confirmPassword: ''
+      });
+      setChangingPassword(false);
+      
+      setTimeout(() => {
+        setMessage('');
+        setMessageType('');
+      }, 3000);
+    } catch (error) {
+      console.error('Password change error:', error);
+      setMessage(error.message || 'Failed to change password');
+      setMessageType('error');
+      speak('Failed to change password');
     } finally {
       setLoading(false);
     }
@@ -59,7 +129,7 @@ const Profile = () => {
       </div>
 
       {message && (
-        <div className={`alert ${message.includes('success') ? 'alert-success' : 'alert-error'}`} role="status">
+        <div className={`alert alert-${messageType === 'success' ? 'success' : 'error'}`} role="status">
           {message}
         </div>
       )}
@@ -91,36 +161,14 @@ const Profile = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="disabilityType">Disability Type</label>
-              <select
-                id="disabilityType"
-                name="disabilityType"
-                value={formData.disabilityType}
-                onChange={handleChange}
-              >
-                <option value="">Prefer not to say</option>
-                <option value="visual">Visual Impairment</option>
-                <option value="hearing">Hearing Impairment</option>
-                <option value="motor">Motor Disability</option>
-                <option value="cognitive">Cognitive Disability</option>
-                <option value="multiple">Multiple Disabilities</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="inputPreference">Preferred Input Method</label>
-              <select
-                id="inputPreference"
-                name="inputPreference"
-                value={formData.inputPreference}
-                onChange={handleChange}
-              >
-                <option value="standard">Standard (Mouse/Keyboard)</option>
-                <option value="keyboard">Keyboard Only</option>
-                <option value="voice">Voice Control</option>
-                <option value="switch">Switch Access</option>
-                <option value="eye">Eye Tracking</option>
-              </select>
+              <label>Email</label>
+              <input
+                type="email"
+                value={user?.email}
+                disabled
+                className="disabled-input"
+              />
+              <small className="form-help">Email cannot be changed. Contact support for assistance.</small>
             </div>
 
             <div className="form-actions">
@@ -135,12 +183,12 @@ const Profile = () => {
         ) : (
           <div className="profile-details">
             <div className="detail-row">
-              <span className="detail-label">Disability Type:</span>
-              <span className="detail-value">{profile.disability_type || 'Not specified'}</span>
+              <span className="detail-label">Full Name:</span>
+              <span className="detail-value">{profile.full_name}</span>
             </div>
             <div className="detail-row">
-              <span className="detail-label">Input Preference:</span>
-              <span className="detail-value">{profile.input_preference}</span>
+              <span className="detail-label">Email:</span>
+              <span className="detail-value">{user?.email}</span>
             </div>
             <div className="detail-row">
               <span className="detail-label">Member Since:</span>
@@ -148,12 +196,84 @@ const Profile = () => {
                 {new Date(profile.created_at).toLocaleDateString()}
               </span>
             </div>
-            <button onClick={() => setEditing(true)} className="btn btn-primary">
-              Edit Profile
-            </button>
+            <div className="profile-actions">
+              <button onClick={() => setEditing(true)} className="btn btn-primary">
+                Edit Profile
+              </button>
+              <button 
+                onClick={() => setChangingPassword(true)} 
+                className="btn btn-secondary"
+              >
+                Change Password
+              </button>
+            </div>
           </div>
         )}
       </div>
+
+      {/* Change Password Modal */}
+      {changingPassword && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="password-modal-title">
+          <div className="modal">
+            <h2 id="password-modal-title">Change Password</h2>
+            <p className="modal-note">Enter your new password below. Your password must be at least 6 characters long.</p>
+            
+            <form onSubmit={handlePasswordSubmit} className="modal-form">
+              <div className="form-group">
+                <label htmlFor="newPassword">New Password</label>
+                <input
+                  type="password"
+                  id="newPassword"
+                  name="newPassword"
+                  value={passwordData.newPassword}
+                  onChange={handlePasswordChange}
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                />
+                <small className="form-help">Minimum 6 characters</small>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="confirmPassword">Confirm New Password</label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={passwordData.confirmPassword}
+                  onChange={handlePasswordChange}
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setChangingPassword(false);
+                    setPasswordData({
+                      newPassword: '',
+                      confirmPassword: ''
+                    });
+                  }} 
+                  className="btn btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                  disabled={loading}
+                >
+                  {loading ? 'Changing...' : 'Change Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

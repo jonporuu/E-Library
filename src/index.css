@@ -2478,3 +2478,35 @@ kbd {
   max-height: 90vh;
   overflow-y: auto;
 }
+
+
+.disabled-input {
+  background-color: var(--surface-color);
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+@media (max-width: 768px) {
+  .profile-actions {
+    flex-direction: column;
+  }
+  
+  .profile-actions .btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+.modal-note {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+}

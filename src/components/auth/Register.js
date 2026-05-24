@@ -129,7 +129,7 @@ const Register = () => {
               </div>
             </div>
 
-            <fieldset className="form-fieldset">
+            {/* <fieldset className="form-fieldset">
               <legend>Accessibility Preferences (Optional)</legend>
               
               <div className="form-group">
@@ -164,7 +164,7 @@ const Register = () => {
                   <option value="eye">Eye Tracking</option>
                 </select>
               </div>
-            </fieldset>
+            </fieldset> */}
 
             <button 
               type="submit" 

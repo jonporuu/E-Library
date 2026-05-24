@@ -33,7 +33,6 @@ export const AuthProvider = ({ children }) => {
             setProfile(profile);
           } catch (profileErr) {
             console.error('❌ Profile fetch failed:', profileErr);
-            // Don't block login if profile fails
             setProfile(null);
           }
         }
