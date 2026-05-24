@@ -1,51 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
-<<<<<<< HEAD
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import ePub from 'epubjs';
 import { Document, Page } from 'react-pdf';
-=======
-import { useParams, useNavigate, useLocation } from 'react-router-dom'; 
-import ePub from 'epubjs';
-import { Document, Page } from 'react-pdf';
-import { pdfjs } from 'react-pdf';
-import { db, supabase } from '../../services/supabaseClient';
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
 import { useAuth } from '../../contexts/AuthContext';
 import { useAccessibility } from '../../contexts/AccessibilityContext';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
-<<<<<<< HEAD
 import { supabase, db } from '../../services/supabaseClient';
 
 import * as pdfjs from 'pdfjs-dist';
 
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
-=======
-
-// Configure PDF.js worker with local file
-pdfjs.GlobalWorkerOptions.workerSrc = `${process.env.PUBLIC_URL}/pdf.worker.min.js`;
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
 
 const BookReader = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-<<<<<<< HEAD
   const location = useLocation();
-=======
-  const location = useLocation(); 
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
   const { user } = useAuth();
   const { fontSize } = useAccessibility();
   
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-<<<<<<< HEAD
   const [bookFormat, setBookFormat] = useState(null);
-=======
-  const [bookFormat, setBookFormat] = useState(null); 
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
   const [epubBook, setEpubBook] = useState(null);
   const [currentChapter, setCurrentChapter] = useState(0);
   const [chapters, setChapters] = useState([]);
@@ -60,10 +38,6 @@ const BookReader = () => {
   const [fileSize, setFileSize] = useState(null);
   const contentRef = useRef(null);
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
   const initialPage = location.state?.page || null;
 
   const mockContent = `
@@ -90,7 +64,6 @@ const BookReader = () => {
     }
   }, [book, chapters, currentChapter, bookFormat, numPages]);
 
-<<<<<<< HEAD
 
   useEffect(() => {
     if (bookFormat === 'pdf' && numPages && currentPage) {
@@ -111,8 +84,6 @@ const BookReader = () => {
     }
   }, [currentChapter, chapters.length]);
 
-=======
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
   const fetchBook = async () => {
     try {
       setLoading(true);
@@ -122,10 +93,6 @@ const BookReader = () => {
       }
       setBook(data);
 
-<<<<<<< HEAD
-=======
-      // Check if book has EPUB format
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
       const epubFormat = data.book_formats?.find(format => format.format_type === 'epub');
       const pdfFormat = data.book_formats?.find(format => format.format_type === 'pdf');
 
@@ -153,48 +120,25 @@ const BookReader = () => {
       console.log('Loading EPUB from:', epubUrl);
       setContentLoading(true);
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('EPUB loading timeout - file may be too large or corrupted')), 30000);
       });
 
       const loadPromise = async () => {
         const epub = ePub(epubUrl);
-<<<<<<< HEAD
         await epub.ready;
 
-=======
-
-        // Wait for book to be ready
-        await epub.ready;
-
-        // Get file size if available
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
         try {
           const response = await fetch(epubUrl, { method: 'HEAD' });
           const contentLength = response.headers.get('content-length');
           if (contentLength) {
             setFileSize(parseInt(contentLength));
-<<<<<<< HEAD
-=======
-            if (parseInt(contentLength) > 50 * 1024 * 1024) {
-              console.warn('Large EPUB file detected, loading may be slow');
-            }
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
           }
         } catch (sizeError) {
           console.warn('Could not determine file size:', sizeError);
         }
 
         setEpubBook(epub);
-<<<<<<< HEAD
-=======
-
-        // Get table of contents
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
         const toc = await epub.toc;
         const chapterList = toc.length > 0 ? toc : [{ title: 'Chapter 1', href: 'chapter1' }];
         setChapters(chapterList);
@@ -208,10 +152,6 @@ const BookReader = () => {
     } catch (error) {
       console.error('Error loading EPUB:', error);
       setContentLoading(false);
-<<<<<<< HEAD
-=======
-      // Fallback to mock content
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
       setChapterContent(mockContent);
       setChapters([{ title: 'Chapter 1', href: 'mock' }]);
     }
@@ -221,79 +161,9 @@ const BookReader = () => {
     try {
       console.log('Loading PDF from:', pdfUrl);
       setContentLoading(true);
-<<<<<<< HEAD
       
       setPdfFile(pdfUrl);
       setContentLoading(false);
-=======
-
-
-      const urlParts = pdfUrl.split('/');
-      const bucketIndex = urlParts.findIndex(part => part === 'book-files');
-      if (bucketIndex !== -1) {
-        const filePath = urlParts.slice(bucketIndex + 1).join('/');
-        console.log('Extracted file path:', filePath);
-
-        // Try to download the file using Supabase client (authenticated)
-        const { data, error } = await supabase.storage
-          .from('book-files')
-          .download(filePath);
-
-        if (error) {
-          console.error('Supabase download error:', error);
-          throw new Error(`Failed to download PDF: ${error.message}`);
-        }
-
-        console.log('PDF downloaded successfully, size:', data.size);
-        setFileSize(data.size);
-
-       
-        if (data.size > 50 * 1024 * 1024) {
-          console.warn('Large PDF file detected, loading may be slow');
-        }
-
-        setPdfFile(data); 
-        setContentLoading(false);
-        return;
-      }
-
-      // Fallback: try to load as blob from URL with timeout
-      try {
-        console.log('Attempting to load PDF as blob from URL...');
-
-        // Create a promise that rejects after 30 seconds
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('PDF loading timeout - file may be too large')), 30000);
-        });
-
-        const fetchPromise = fetch(pdfUrl).then(async (response) => {
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-          const blob = await response.blob();
-          console.log('PDF loaded as blob from URL, size:', blob.size);
-          setFileSize(blob.size);
-
-          // Check file size - warn for large files (> 50MB)
-          if (blob.size > 50 * 1024 * 1024) {
-            console.warn('Large PDF file detected, loading may be slow');
-          }
-
-          return blob;
-        });
-
-        const blob = await Promise.race([fetchPromise, timeoutPromise]);
-        setPdfFile(blob);
-        setContentLoading(false);
-      } catch (blobError) {
-        console.warn('Blob loading failed:', blobError);
-        setContentLoading(false);
-        // Last resort: use direct URL
-        setPdfFile(pdfUrl);
-      }
-
-      console.log('PDF URL set successfully');
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
     } catch (error) {
       console.error('Error loading PDF:', error);
       setError(`Failed to load PDF file: ${error.message}`);
@@ -314,38 +184,18 @@ const BookReader = () => {
       const chapter = chapters[chapterIndex];
       console.log('Loading chapter:', chapter.title, chapter.href);
 
-<<<<<<< HEAD
-=======
-      // Add timeout for chapter loading
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Chapter loading timeout')), 10000);
       });
 
       const loadChapterPromise = async () => {
-<<<<<<< HEAD
         const chapterDoc = await epubBook.getChapter(chapter.href);
         if (chapterDoc) {
-=======
-        // Get chapter content using epubjs
-        const chapterDoc = await epubBook.getChapter(chapter.href);
-
-        if (chapterDoc) {
-          // Convert to HTML string
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
           const content = chapterDoc.innerHTML || mockContent;
           setChapterContent(content);
         } else {
           setChapterContent(mockContent);
         }
-<<<<<<< HEAD
-=======
-
-        // Update progress
-        const percent = Math.round(((chapterIndex + 1) / chapters.length) * 100);
-        setProgress(percent);
-        saveProgress(percent);
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
       };
 
       await Promise.race([loadChapterPromise(), timeoutPromise]);
@@ -358,7 +208,6 @@ const BookReader = () => {
   };
 
   const saveProgress = async (percent) => {
-<<<<<<< HEAD
     try {
       await db.updateReadingProgress(user.id, id, {
         last_position: currentChapter,
@@ -367,18 +216,6 @@ const BookReader = () => {
     } catch (err) {
       console.error('Error saving progress:', err);
     }
-=======
-  try {
-    console.log('💾 Saving progress:', { userId: user?.id, bookId: id, percent, chapter: currentChapter });
-    const result = await db.updateReadingProgress(user.id, id, {
-      last_position: currentChapter,
-      percentage: percent
-    });
-    console.log('✅ Progress saved successfully:', result);
-  } catch (err) {
-    console.error('❌ Error saving progress:', err);
-  }
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
   };
 
   const handlePrevChapter = () => {
@@ -398,20 +235,12 @@ const BookReader = () => {
   const handlePrevPage = () => {
     if (currentPage > 1) {
       setCurrentPage(prev => prev - 1);
-<<<<<<< HEAD
-=======
-      savePdfProgress();
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
     }
   };
 
   const handleNextPage = () => {
     if (currentPage < numPages) {
       setCurrentPage(prev => prev + 1);
-<<<<<<< HEAD
-=======
-      savePdfProgress();
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
     }
   };
 
@@ -425,27 +254,13 @@ const BookReader = () => {
     setNumPages(numPages);
     console.log('PDF loaded successfully, pages:', numPages);
     
-<<<<<<< HEAD
     if (initialPage && initialPage > 0 && initialPage <= numPages) {
       setCurrentPage(initialPage);
-=======
-    // If there's an initial page from bookmark, go to that page
-    if (initialPage && initialPage > 0 && initialPage <= numPages) {
-      setCurrentPage(initialPage);
-      // Save progress for this page
-      const percent = Math.round((initialPage / numPages) * 100);
-      setProgress(percent);
-      db.updateReadingProgress(user.id, id, {
-        last_position: initialPage - 1, 
-        percentage: percent
-      }).catch(err => console.error('Error saving progress:', err));
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
     }
     
     setContentLoading(false);
   };
 
-<<<<<<< HEAD
   const savePdfProgress = () => {
     if (!numPages) return;
     
@@ -463,21 +278,6 @@ const BookReader = () => {
       last_position: currentPage - 1,
       percentage: percent
     }).catch(err => console.error('Error saving PDF progress:', err));
-=======
-  const savePdfProgress = async () => {
-  const percent = Math.round((currentPage / numPages) * 100);
-  setProgress(percent);
-  try {
-    console.log('💾 Saving PDF progress:', { userId: user?.id, bookId: id, percent, page: currentPage });
-    const result = await db.updateReadingProgress(user.id, id, {
-      last_position: currentPage - 1, 
-      percentage: percent
-    });
-    console.log('✅ PDF progress saved:', result);
-  } catch (err) {
-    console.error('❌ Error saving PDF progress:', err);
-  }
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
   };
 
   const loadProgress = async () => {
@@ -485,15 +285,10 @@ const BookReader = () => {
       const progressData = await db.getReadingProgress(user.id);
       const bookProgress = progressData.find(p => p.book_id === id);
       
-<<<<<<< HEAD
-=======
-      // Only load saved progress if there's no initial page from bookmark
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
       if (bookProgress && !initialPage) {
         if (bookFormat === 'epub') {
           const savedChapter = bookProgress.last_position || 0;
           setCurrentChapter(Math.min(savedChapter, chapters.length - 1));
-<<<<<<< HEAD
           setProgress(bookProgress.percentage || 0);
         } else if (bookFormat === 'pdf') {
           const savedPage = (bookProgress.last_position || 0) + 1;
@@ -501,15 +296,6 @@ const BookReader = () => {
           setProgress(bookProgress.percentage || 0);
         }
       } else if (initialPage && bookFormat === 'pdf') {
-=======
-        } else if (bookFormat === 'pdf') {
-          const savedPage = (bookProgress.last_position || 0) + 1; 
-          setCurrentPage(savedPage);
-        }
-        setProgress(bookProgress.percentage || 0);
-      } else if (initialPage && bookFormat === 'pdf') {
-        // Already handling in onDocumentLoadSuccess
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
         console.log('Will navigate to bookmark page:', initialPage);
       }
     } catch (err) {
@@ -527,15 +313,10 @@ const BookReader = () => {
       });
       setShowBookmarkModal(false);
       setBookmarkNote('');
-<<<<<<< HEAD
       alert('Bookmark saved!');
     } catch (err) {
       console.error('Failed to add bookmark');
       alert('Failed to save bookmark');
-=======
-    } catch (err) {
-      console.error('Failed to add bookmark');
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
     }
   };
 
@@ -558,7 +339,6 @@ const BookReader = () => {
   if (error) return <ErrorMessage message={error} onRetry={fetchBook} showHomeLink />;
   if (!book) return <ErrorMessage message="Book not found" showHomeLink />;
 
-<<<<<<< HEAD
   // Calculate display progress
   const displayProgress = bookFormat === 'pdf' && numPages
     ? (currentPage === numPages ? 100 : Math.round((currentPage / numPages) * 100))
@@ -566,11 +346,6 @@ const BookReader = () => {
 
   return (
     <div className="reader-container">
-=======
-  return (
-    <div className="reader-container">
-      {/* Reader Header */}
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
       <header className="reader-header">
         <button 
           onClick={() => navigate('/dashboard/books')} 
@@ -591,7 +366,6 @@ const BookReader = () => {
         </div>
       </header>
 
-<<<<<<< HEAD
       <div className="progress-container" role="progressbar" aria-valuenow={displayProgress} aria-valuemin="0" aria-valuemax="100">
         <div className="progress-bar" style={{ width: `${displayProgress}%` }} />
         <span className="progress-text">
@@ -605,52 +379,16 @@ const BookReader = () => {
         </span>
       </div>
 
-=======
-      {/* Progress Bar */}
-      <div className="progress-container" role="progressbar" aria-valuenow={progress} aria-valuemin="0" aria-valuemax="100">
-        <div className="progress-bar" style={{ width: `${progress}%` }} />
-        <span className="progress-text">
-          {bookFormat === 'pdf' ? (
-            `Page ${currentPage} of ${numPages} (${progress}%)`
-          ) : (
-            `Chapter ${currentChapter + 1} of ${chapters.length} (${progress}%)`
-          )}
-          {bookFormat === 'epub' && chapters[currentChapter] && ` - ${chapters[currentChapter].title}`}
-        </span>
-      </div>
-
-      {/* Book Content */}
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
       <main
         ref={contentRef}
         className="book-content"
         tabIndex="-1"
-<<<<<<< HEAD
         style={{ fontSize: `${fontSize}px` }}
-=======
-        style={{
-          fontSize: `${fontSize}px`
-        }}
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
         aria-label="Book content"
       >
         {contentLoading ? (
           <div className="loading-container">
-<<<<<<< HEAD
             <LoadingSpinner message={bookFormat === 'pdf' ? "Loading PDF document..." : "Loading chapter content..."} />
-=======
-            <LoadingSpinner message={
-              bookFormat === 'pdf' 
-                ? "Loading PDF document..." 
-                : "Loading chapter content..."
-            } />
-            {fileSize && fileSize > 10 * 1024 * 1024 && (
-              <p className="loading-hint">
-                Large file detected ({(fileSize / (1024 * 1024)).toFixed(1)} MB). 
-                Loading may take longer than usual.
-              </p>
-            )}
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
           </div>
         ) : bookFormat === 'pdf' ? (
           <div className="pdf-viewer">
@@ -666,10 +404,6 @@ const BookReader = () => {
                 scale={1.2}
                 renderTextLayer={false}
                 renderAnnotationLayer={false}
-<<<<<<< HEAD
-=======
-                loading={<LoadingSpinner message="Loading page..." />}
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
               />
             </Document>
           </div>
@@ -678,39 +412,18 @@ const BookReader = () => {
         )}
       </main>
 
-<<<<<<< HEAD
       <nav className="reader-nav">
-=======
-      {/* Navigation */}
-      <nav className="reader-nav" aria-label={bookFormat === 'pdf' ? 'Page navigation' : 'Chapter navigation'}>
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
         <button
           onClick={bookFormat === 'pdf' ? handlePrevPage : handlePrevChapter}
           disabled={bookFormat === 'pdf' ? currentPage === 1 : currentChapter === 0}
           className="btn btn-secondary"
-<<<<<<< HEAD
         >
           ← Previous
         </button>
-=======
-          aria-label={bookFormat === 'pdf' ? 'Previous page' : 'Previous chapter'}
-        >
-          ← {bookFormat === 'pdf' ? 'Previous' : 'Previous'}
-        </button>
-        <span className="page-indicator" aria-live="polite">
-          {bookFormat === 'pdf' ? (
-            `Page ${currentPage} of ${numPages}`
-          ) : (
-            `Chapter ${currentChapter + 1} of ${chapters.length}`
-          )}
-          {bookFormat === 'epub' && chapters[currentChapter] && ` - ${chapters[currentChapter].title}`}
-        </span>
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
         <button
           onClick={bookFormat === 'pdf' ? handleNextPage : handleNextChapter}
           disabled={bookFormat === 'pdf' ? currentPage === numPages : currentChapter === chapters.length - 1}
           className="btn btn-secondary"
-<<<<<<< HEAD
         >
           Next →
         </button>
@@ -727,29 +440,6 @@ const BookReader = () => {
                 `Chapter ${currentChapter + 1} of ${chapters.length}`
               ) : (
                 `Location ${bookFormat === 'pdf' ? currentPage : currentChapter + 1}`
-=======
-          aria-label={bookFormat === 'pdf' ? 'Next page' : 'Next chapter'}
-        >
-          {bookFormat === 'pdf' ? 'Next' : 'Next'} →
-        </button>
-      </nav>
-
-      {/* Bookmark Modal */}
-      {showBookmarkModal && (
-        <div 
-          className="modal-overlay" 
-          role="dialog" 
-          aria-modal="true"
-          aria-labelledby="bookmark-title"
-        >
-          <div className="modal">
-            <h2 id="bookmark-title">Add Bookmark</h2>
-            <p>
-              {bookFormat === 'pdf' ? (
-                `Page ${currentPage} of "${book.title}"`
-              ) : (
-                `Chapter ${currentChapter + 1} of "${book.title}"`
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
               )}
             </p>
             <div className="form-group">
@@ -773,14 +463,6 @@ const BookReader = () => {
           </div>
         </div>
       )}
-<<<<<<< HEAD
-=======
-
-      {/* Keyboard shortcuts help */}
-      <div className="reader-help" role="complementary" aria-label="Keyboard shortcuts">
-        <p>Use ← → arrow keys to navigate pages</p>
-      </div>
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
     </div>
   );
 };

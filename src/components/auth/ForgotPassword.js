@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
-<<<<<<< HEAD
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabaseClient';
-=======
-import { Link } from 'react-router-dom';
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
 import { useAccessibility } from '../../contexts/AccessibilityContext';
 
 const ForgotPassword = () => {
@@ -13,10 +9,7 @@ const ForgotPassword = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { speak } = useAccessibility();
-<<<<<<< HEAD
   const navigate = useNavigate();
-=======
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,7 +18,6 @@ const ForgotPassword = () => {
     setLoading(true);
 
     try {
-<<<<<<< HEAD
       // Get the current URL for redirect
       const redirectUrl = `${window.location.origin}/update-password`;
       
@@ -46,14 +38,6 @@ const ForgotPassword = () => {
       console.error('Password reset error:', err);
       setError(err.message || 'Failed to send reset instructions. Please try again.');
       speak('Failed to send reset instructions');
-=======
-      // In a real app, call Supabase auth reset
-      // await supabase.auth.resetPasswordForEmail(email);
-      setMessage('Password reset instructions have been sent to your email.');
-      speak('Password reset instructions sent. Please check your email.');
-    } catch (err) {
-      setError('Failed to send reset instructions. Please try again.');
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
     } finally {
       setLoading(false);
     }
@@ -90,10 +74,7 @@ const ForgotPassword = () => {
                   required
                   autoComplete="email"
                   autoFocus
-<<<<<<< HEAD
                   placeholder="your@email.com"
-=======
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
                 />
               </div>
 
@@ -109,11 +90,7 @@ const ForgotPassword = () => {
           )}
 
           <div className="auth-links">
-<<<<<<< HEAD
             <Link to="/login">← Back to Sign In</Link>
-=======
-            <Link to="/login">Back to Sign In</Link>
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
           </div>
         </div>
       </div>

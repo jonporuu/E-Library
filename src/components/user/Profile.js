@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-<<<<<<< HEAD
 import { supabase } from '../../services/supabaseClient';
-=======
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
 import { db } from '../../services/supabaseClient';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { useAccessibility } from '../../contexts/AccessibilityContext';
 
 const Profile = () => {
-<<<<<<< HEAD
   const { user, profile } = useAuth();
   const { speak } = useAccessibility();
   const [editing, setEditing] = useState(false);
@@ -22,25 +18,11 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
-=======
-  const { user, profile, updateProfile } = useAuth();
-  const { speak } = useAccessibility();
-  const [editing, setEditing] = useState(false);
-  const [formData, setFormData] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
 
   useEffect(() => {
     if (profile) {
       setFormData({
-<<<<<<< HEAD
         fullName: profile.full_name || ''
-=======
-        fullName: profile.full_name || '',
-        disabilityType: profile.disability_type || '',
-        inputPreference: profile.input_preference || 'standard'
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
       });
     }
   }, [profile]);
@@ -50,19 +32,15 @@ const Profile = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-<<<<<<< HEAD
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
     setPasswordData(prev => ({ ...prev, [name]: value }));
   };
 
-=======
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
-<<<<<<< HEAD
     setMessageType('');
 
     try {
@@ -82,27 +60,12 @@ const Profile = () => {
     } catch (error) {
       setMessage('Failed to update profile');
       setMessageType('error');
-=======
-
-    try {
-      await db.updateProfile(user.id, {
-        full_name: formData.fullName,
-        disability_type: formData.disabilityType || null,
-        input_preference: formData.inputPreference
-      });
-      setMessage('Profile updated successfully');
-      speak('Profile updated successfully');
-      setEditing(false);
-    } catch (error) {
-      setMessage('Failed to update profile');
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
       speak('Failed to update profile');
     } finally {
       setLoading(false);
     }
   };
 
-<<<<<<< HEAD
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -156,8 +119,6 @@ const Profile = () => {
     }
   };
 
-=======
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
   if (!profile) return <LoadingSpinner />;
 
   return (
@@ -168,11 +129,7 @@ const Profile = () => {
       </div>
 
       {message && (
-<<<<<<< HEAD
         <div className={`alert alert-${messageType === 'success' ? 'success' : 'error'}`} role="status">
-=======
-        <div className={`alert ${message.includes('success') ? 'alert-success' : 'alert-error'}`} role="status">
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
           {message}
         </div>
       )}
@@ -204,7 +161,6 @@ const Profile = () => {
             </div>
 
             <div className="form-group">
-<<<<<<< HEAD
               <label>Email</label>
               <input
                 type="email"
@@ -213,38 +169,6 @@ const Profile = () => {
                 className="disabled-input"
               />
               <small className="form-help">Email cannot be changed. Contact support for assistance.</small>
-=======
-              <label htmlFor="disabilityType">Disability Type</label>
-              <select
-                id="disabilityType"
-                name="disabilityType"
-                value={formData.disabilityType}
-                onChange={handleChange}
-              >
-                <option value="">Prefer not to say</option>
-                <option value="visual">Visual Impairment</option>
-                <option value="hearing">Hearing Impairment</option>
-                <option value="motor">Motor Disability</option>
-                <option value="cognitive">Cognitive Disability</option>
-                <option value="multiple">Multiple Disabilities</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="inputPreference">Preferred Input Method</label>
-              <select
-                id="inputPreference"
-                name="inputPreference"
-                value={formData.inputPreference}
-                onChange={handleChange}
-              >
-                <option value="standard">Standard (Mouse/Keyboard)</option>
-                <option value="keyboard">Keyboard Only</option>
-                <option value="voice">Voice Control</option>
-                <option value="switch">Switch Access</option>
-                <option value="eye">Eye Tracking</option>
-              </select>
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
             </div>
 
             <div className="form-actions">
@@ -259,21 +183,12 @@ const Profile = () => {
         ) : (
           <div className="profile-details">
             <div className="detail-row">
-<<<<<<< HEAD
               <span className="detail-label">Full Name:</span>
               <span className="detail-value">{profile.full_name}</span>
             </div>
             <div className="detail-row">
               <span className="detail-label">Email:</span>
               <span className="detail-value">{user?.email}</span>
-=======
-              <span className="detail-label">Disability Type:</span>
-              <span className="detail-value">{profile.disability_type || 'Not specified'}</span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Input Preference:</span>
-              <span className="detail-value">{profile.input_preference}</span>
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
             </div>
             <div className="detail-row">
               <span className="detail-label">Member Since:</span>
@@ -281,7 +196,6 @@ const Profile = () => {
                 {new Date(profile.created_at).toLocaleDateString()}
               </span>
             </div>
-<<<<<<< HEAD
             <div className="profile-actions">
               <button onClick={() => setEditing(true)} className="btn btn-primary">
                 Edit Profile
@@ -360,14 +274,6 @@ const Profile = () => {
           </div>
         </div>
       )}
-=======
-            <button onClick={() => setEditing(true)} className="btn btn-primary">
-              Edit Profile
-            </button>
-          </div>
-        )}
-      </div>
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
     </div>
   );
 };

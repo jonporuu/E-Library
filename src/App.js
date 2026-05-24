@@ -8,10 +8,7 @@ import HomePage from './components/home/HomePage';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import ForgotPassword from './components/auth/ForgotPassword';
-<<<<<<< HEAD
 import UpdatePassword from './components/auth/UpdatePassword';
-=======
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
 
 // Layout
 import Layout from './components/common/Layout';
@@ -147,11 +144,8 @@ function App() {
               <ForgotPassword />
             </PublicRoute>
           } />
-<<<<<<< HEAD
           <Route path="/update-password" element={<UpdatePassword />} />
           
-=======
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
 
           {/* PROTECTED USER ROUTES */}
           <Route path="/dashboard" element={

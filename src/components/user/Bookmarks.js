@@ -64,10 +64,7 @@ const Bookmarks = () => {
             <article key={bookmark.id} className="bookmark-card" role="listitem">
               <div className="bookmark-content">
                 <h2>
-<<<<<<< HEAD
                   {/* FIXED: Use state instead of query param */}
-=======
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
                   <Link 
                     to={`/dashboard/books/${bookmark.book_id}`}
                     state={{ page: bookmark.location }}
@@ -85,10 +82,7 @@ const Bookmarks = () => {
                 )}
               </div>
               <div className="bookmark-actions">
-<<<<<<< HEAD
                 {/* FIXED: Use state instead of query param */}
-=======
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
                 <Link 
                   to={`/dashboard/books/${bookmark.book_id}`}
                   state={{ page: bookmark.location }}

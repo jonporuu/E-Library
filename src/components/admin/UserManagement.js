@@ -44,10 +44,6 @@ const UserManagement = () => {
     if (!window.confirm('Are you sure you want to delete this user?')) return;
     
     try {
-<<<<<<< HEAD
-=======
-      // In real app, call Supabase auth admin delete
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
       setUsers(users.filter(u => u.id !== userId));
       speak('User deleted');
     } catch (err) {
@@ -81,11 +77,7 @@ const UserManagement = () => {
               <th scope="col">Name</th>
               <th scope="col">Email</th>
               <th scope="col">Role</th>
-<<<<<<< HEAD
               
-=======
-              <th scope="col">Disability</th>
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
               <th scope="col">Joined</th>
               <th scope="col">Actions</th>
             </tr>
@@ -103,18 +95,10 @@ const UserManagement = () => {
                     aria-label={`Change role for ${user.full_name}`}
                   >
                     <option value="user">User</option>
-<<<<<<< HEAD
                     <option value="admin">Admin</option>
                   </select>
                 </td>
 
-=======
-                    <option value="librarian">Librarian</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </td>
-                <td>{user.disability_type || '-'}</td>
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
                 <td>{new Date(user.created_at).toLocaleDateString()}</td>
                 <td>
                   <button 

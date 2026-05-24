@@ -25,19 +25,11 @@ const BookManagement = () => {
     reading_level: 'beginner',
     isbn: '',
     cover_url: '',
-<<<<<<< HEAD
-=======
-    // File uploads
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
     coverFile: null,
     epubFile: null,
     pdfFile: null
   });
 
-<<<<<<< HEAD
-=======
-  // Dropzone hooks
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
   const coverDropzone = useDropzone({
     accept: {
       'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp']
@@ -102,7 +94,6 @@ const BookManagement = () => {
     }
   };
 
-<<<<<<< HEAD
 const handleSubmit = async (e) => {
   e.preventDefault();
   setUploading(true);
@@ -279,139 +270,6 @@ const handleSubmit = async (e) => {
     setUploading(false);
   }
 };
-=======
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setUploading(true);
-
-    try {
-      // Validate required fields
-      if (!formData.title || !formData.author) {
-        alert('Please fill in title and author');
-        setUploading(false);
-        return;
-      }
-
-      // Validate that at least one file is selected (if not editing with existing cover)
-      const hasCover = formData.coverFile || formData.cover_url;
-      const hasBookFile = formData.epubFile || formData.pdfFile;
-      
-      if (!hasCover && !hasBookFile) {
-        alert('Please select at least a cover image or a book file (EPUB/PDF)');
-        setUploading(false);
-        return;
-      }
-
-      let coverUrl = formData.cover_url;
-
-      // Upload cover file if selected
-      if (formData.coverFile) {
-        console.log('Uploading cover for:', formData.title);
-        const coverPath = `covers/${Date.now()}_${formData.coverFile.name}`;
-        const { error: uploadError } = await supabase.storage
-          .from('book-covers')
-          .upload(coverPath, formData.coverFile, { upsert: true });
-        
-        if (uploadError) {
-          console.error('Cover upload error:', uploadError);
-          throw new Error(`Failed to upload cover: ${uploadError.message}`);
-        }
-        
-        const { data: { publicUrl } } = supabase.storage
-          .from('book-covers')
-          .getPublicUrl(coverPath);
-        coverUrl = publicUrl;
-        console.log('Cover uploaded successfully:', publicUrl);
-      }
-
-      // Create or update book
-      let bookId;
-      if (editingBook) {
-        await db.updateBook(editingBook.id, {
-          title: formData.title,
-          author: formData.author,
-          description: formData.description,
-          reading_level: formData.reading_level,
-          isbn: formData.isbn,
-          cover_url: coverUrl
-        });
-        bookId = editingBook.id;
-        speak('Book updated successfully');
-      } else {
-        const newBook = await db.createBook({
-          title: formData.title,
-          author: formData.author,
-          description: formData.description,
-          reading_level: formData.reading_level,
-          isbn: formData.isbn,
-          cover_url: coverUrl,
-          status: 'available'
-        });
-        bookId = newBook.id;
-        speak('Book created successfully');
-      }
-
-      // Upload book files (EPUB/PDF) if selected
-      if (formData.epubFile) {
-        console.log('Uploading EPUB for:', formData.title, formData.epubFile.name);
-        const epubPath = `epub/${bookId}/${formData.epubFile.name}`;
-        const { error: epubError } = await supabase.storage
-          .from('book-files')
-          .upload(epubPath, formData.epubFile);
-        
-        if (!epubError) {
-          const { data: { publicUrl } } = supabase.storage
-            .from('book-files')
-            .getPublicUrl(epubPath);
-          await db.addBookFormat({
-            book_id: bookId,
-            format_type: 'epub',
-            file_url: publicUrl,
-            file_size: formData.epubFile.size
-          });
-          console.log('EPUB uploaded successfully:', publicUrl);
-        } else {
-          console.error('EPUB upload error:', epubError);
-          throw new Error(`Failed to upload EPUB: ${epubError.message}`);
-        }
-      }
-
-      if (formData.pdfFile) {
-        console.log('Uploading PDF for:', formData.title, formData.pdfFile.name);
-        const pdfPath = `pdf/${bookId}/${formData.pdfFile.name}`;
-        const { error: pdfError } = await supabase.storage
-          .from('book-files')
-          .upload(pdfPath, formData.pdfFile);
-        
-        if (!pdfError) {
-          const { data: { publicUrl } } = supabase.storage
-            .from('book-files')
-            .getPublicUrl(pdfPath);
-          await db.addBookFormat({
-            book_id: bookId,
-            format_type: 'pdf',
-            file_url: publicUrl,
-            file_size: formData.pdfFile.size
-          });
-          console.log('PDF uploaded successfully:', publicUrl);
-        } else {
-          console.error('PDF upload error:', pdfError);
-          throw new Error(`Failed to upload PDF: ${pdfError.message}`);
-        }
-      }
-
-      setShowModal(false);
-      setEditingBook(null);
-      resetForm();
-      fetchBooks();
-    } catch (err) {
-      console.error('Error saving book:', err);
-      speak('Failed to save book: ' + err.message);
-    } finally {
-      setUploading(false);
-    }
-  };
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
 
   const handleEdit = (book) => {
     setEditingBook(book);
@@ -459,11 +317,7 @@ const handleSubmit = async (e) => {
 
   const handleBulkUploadComplete = () => {
     setShowBulkUpload(false);
-<<<<<<< HEAD
     fetchBooks(); 
-=======
-    fetchBooks(); // Refresh the book list
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
     speak('Books uploaded successfully');
   };
 
@@ -632,29 +486,18 @@ const handleSubmit = async (e) => {
 
               {/* Cover Image - URL or File */}
               <div className="form-group">
-<<<<<<< HEAD
                 <label>Cover Image *</label>
-=======
-                <label>Cover Image</label>
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
                 <div className="file-input-wrapper">
                   <input
                     type="text"
                     name="cover_url"
                     value={formData.cover_url}
                     onChange={handleChange}
-<<<<<<< HEAD
                     required 
                     placeholder="Or enter image URL"
                     className="url-input"
                   />
                   <span className="or-divider"></span>
-=======
-                    placeholder="Or enter image URL"
-                    className="url-input"
-                  />
-                  <span className="or-divider">OR</span>
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
                   <div
                     {...coverDropzone.getRootProps()}
                     className={`dropzone ${coverDropzone.isDragActive ? 'active' : ''}`}
@@ -671,10 +514,7 @@ const handleSubmit = async (e) => {
                           <span className="drop-icon">📸</span>
                           <p>Drag & drop a cover image here, or click to select</p>
                           <small>Supports: JPG, PNG, GIF, WebP</small>
-<<<<<<< HEAD
                           
-=======
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
                         </div>
                       )}
                     </div>
@@ -684,11 +524,7 @@ const handleSubmit = async (e) => {
 
               {/* Book Files Section */}
               <div className="form-section">
-<<<<<<< HEAD
                 <h3>Book Files</h3>
-=======
-                <h3>Book Files (Optional)</h3>
->>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
                 
                 {/* EPUB Upload */}
                 <div className="form-group file-upload-group">
