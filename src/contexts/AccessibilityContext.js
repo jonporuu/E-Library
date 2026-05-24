@@ -55,10 +55,20 @@ export const AccessibilityProvider = ({ children }) => {
   const value = {
     fontSize,
     updateFontSize,
+<<<<<<< HEAD
     speak: (text) => {
       console.log('TTS (disabled):', text);
     },
     stopSpeaking: () => {
+=======
+    // Keep speak function but make it optional/no-op
+    speak: (text) => {
+      // Text-to-speech removed - just log for debugging
+      console.log('TTS (disabled):', text);
+    },
+    stopSpeaking: () => {
+      // No-op
+>>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
     }
   };
 

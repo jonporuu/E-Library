@@ -2477,6 +2477,7 @@ kbd {
   max-width: 700px;
   max-height: 90vh;
   overflow-y: auto;
+<<<<<<< HEAD
 }
 
 
@@ -2509,4 +2510,6 @@ kbd {
   color: var(--text-secondary);
   font-size: 0.875rem;
   margin-bottom: 1.5rem;
+=======
+>>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
 }

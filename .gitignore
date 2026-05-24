@@ -17,9 +17,15 @@
 .env.development.local
 .env.test.local
 .env.production.local
+<<<<<<< HEAD
 .env
+=======
+>>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
 
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+<<<<<<< HEAD
 
+=======
+>>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95

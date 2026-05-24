@@ -122,7 +122,11 @@ const UserDashboard = () => {
       {/* Accessibility Tip */}
       <aside className="accessibility-tip" role="complementary">
         <h3>💡 Tip</h3>
+<<<<<<< HEAD
         <p>Use keyboard shortcuts to navigate: Arrow keys to turn pages.</p>
+=======
+        <p>Use keyboard shortcuts to navigate: Alt + A for high contrast, Alt + +/- for font size, Arrow keys to turn pages.</p>
+>>>>>>> 891216a9949c197a1dc76bc1bc22136a043f9c95
       </aside>
     </div>
   );
