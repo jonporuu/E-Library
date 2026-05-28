@@ -1,0 +1,45 @@
+/* ==========================================
+   PRINT STYLES
+   ========================================== */
+@media print {
+  .header,
+  .footer,
+  .reader-nav,
+  .reader-actions,
+  .accessibility-controls,
+  .btn,
+  .modal-overlay,
+  .admin-actions-bar,
+  .action-buttons,
+  .modal-close {
+    display: none !important;
+  }
+  
+  .book-content {
+    border: none;
+    padding: 0;
+    margin: 0;
+    background: white;
+    color: black;
+  }
+  
+  .reader-container {
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .progress-container {
+    display: none;
+  }
+  
+  a {
+    text-decoration: none;
+    color: black;
+  }
+  
+  body {
+    background: white;
+    color: black;
+  }
+}

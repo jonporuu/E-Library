@@ -5,10 +5,15 @@ import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 import { useAccessibility } from '../../contexts/AccessibilityContext';
 import BookUpload from './BookUpload';
+import { useAuth } from '../../contexts/AuthContext';
 
 const BookManagement = () => {
   const { speak } = useAccessibility();
+  const { profile, isAdmin, isLibrarian } = useAuth();
+  const canDelete = isAdmin();
   const [books, setBooks] = useState([]);
+  const [filteredBooks, setFilteredBooks] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -16,6 +21,7 @@ const BookManagement = () => {
   const [bookFormats, setBookFormats] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [snackbar, setSnackbar] = useState({ show: false, message: '', type: 'success' });
   
   // Form data including files
   const [formData, setFormData] = useState({
@@ -24,11 +30,19 @@ const BookManagement = () => {
     description: '',
     reading_level: 'beginner',
     isbn: '',
-    cover_url: '',
     coverFile: null,
     epubFile: null,
     pdfFile: null
   });
+
+  // Show snackbar notification
+  const showSnackbar = (message, type = 'success') => {
+    setSnackbar({ show: true, message, type });
+    speak(message);
+    setTimeout(() => {
+      setSnackbar({ show: false, message: '', type: 'success' });
+    }, 3000);
+  };
 
   const coverDropzone = useDropzone({
     accept: {
@@ -70,15 +84,29 @@ const BookManagement = () => {
     fetchBooks();
   }, []);
 
+  // Filter books when search term changes
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setFilteredBooks(books);
+    } else {
+      const filtered = books.filter(book => 
+        book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        book.author.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredBooks(filtered);
+    }
+  }, [searchTerm, books]);
+
   const fetchBooks = async () => {
     try {
       setLoading(true);
       const data = await db.getBooks();
       setBooks(data);
+      setFilteredBooks(data);
       setError(null);
     } catch (err) {
       setError('Failed to load books');
-      speak('Error loading books');
+      showSnackbar('Failed to load books', 'error');
     } finally {
       setLoading(false);
     }
@@ -96,22 +124,35 @@ const BookManagement = () => {
 
 const handleSubmit = async (e) => {
   e.preventDefault();
+  
+  // For new books, validate requirements
+  if (!editingBook) {
+    if (!formData.coverFile) {
+      showSnackbar('Please upload a cover image for the book', 'error');
+      return;
+    }
+    
+    if (!formData.epubFile && !formData.pdfFile) {
+      showSnackbar('Please upload at least one book file (EPUB or PDF)', 'error');
+      return;
+    }
+  }
+  
   setUploading(true);
 
   try {
     if (!formData.title || !formData.author) {
-      alert('Please fill in title and author');
+      showSnackbar('Please fill in title and author', 'error');
       setUploading(false);
       return;
     }
 
-    // Handle ISBN - set to null if empty to avoid duplicate 
     let isbnValue = formData.isbn;
     if (!isbnValue || isbnValue.trim() === '') {
       isbnValue = null;
     }
 
-    let coverUrl = formData.cover_url;
+    let coverUrl = '';
 
     // Upload cover file if selected
     if (formData.coverFile) {
@@ -141,7 +182,7 @@ const handleSubmit = async (e) => {
     if (editingBook) {
       console.log('Updating book:', editingBook.id);
       
-      // For updates,check if the ISBN is being used by another book
+      // For updates, check if the ISBN is being used by another book
       if (isbnValue) {
         const { data: existingBook } = await supabase
           .from('books')
@@ -151,24 +192,30 @@ const handleSubmit = async (e) => {
           .maybeSingle();
         
         if (existingBook) {
-          alert('This ISBN is already used by another book. Please use a different ISBN or leave it blank.');
+          showSnackbar('This ISBN is already used by another book. Please use a different ISBN or leave it blank.', 'error');
           setUploading(false);
           return;
         }
       }
       
-      const updatedBook = await db.updateBook(editingBook.id, {
+      const updateData = {
         title: formData.title,
         author: formData.author,
         description: formData.description,
         reading_level: formData.reading_level,
-        isbn: isbnValue, 
-        cover_url: coverUrl
-      });
+        isbn: isbnValue
+      };
+      
+      // Only update cover if a new one was uploaded
+      if (coverUrl) {
+        updateData.cover_url = coverUrl;
+      }
+      
+      const updatedBook = await db.updateBook(editingBook.id, updateData);
       
       console.log('Update response:', updatedBook);
       bookId = editingBook.id;
-      speak('Book updated successfully');
+      showSnackbar('Book updated successfully!', 'success');
     } else {
       console.log('Creating new book');
       
@@ -181,7 +228,7 @@ const handleSubmit = async (e) => {
           .maybeSingle();
         
         if (existingBook) {
-          alert('A book with this ISBN already exists. Please use a different ISBN or leave it blank.');
+          showSnackbar('A book with this ISBN already exists. Please use a different ISBN or leave it blank.', 'error');
           setUploading(false);
           return;
         }
@@ -197,7 +244,7 @@ const handleSubmit = async (e) => {
         status: 'available'
       });
       bookId = newBook.id;
-      speak('Book created successfully');
+      showSnackbar('Book created successfully!', 'success');
     }
 
     // Upload new book files (EPUB/PDF) if selected
@@ -261,11 +308,9 @@ const handleSubmit = async (e) => {
     setEditingBook(null);
     resetForm();
     await fetchBooks();
-    alert(editingBook ? 'Book updated successfully!' : 'Book created successfully!');
   } catch (err) {
     console.error('Error saving book:', err);
-    alert(`Failed to save book: ${err.message}`);
-    speak('Failed to save book');
+    showSnackbar(`Failed to save book: ${err.message}`, 'error');
   } finally {
     setUploading(false);
   }
@@ -279,7 +324,6 @@ const handleSubmit = async (e) => {
       description: book.description || '',
       reading_level: book.reading_level,
       isbn: book.isbn || '',
-      cover_url: book.cover_url || '',
       coverFile: null,
       epubFile: null,
       pdfFile: null
@@ -294,9 +338,9 @@ const handleSubmit = async (e) => {
     try {
       await db.deleteBook(id);
       setBooks(books.filter(b => b.id !== id));
-      speak('Book deleted');
+      showSnackbar('Book deleted successfully', 'success');
     } catch (err) {
-      speak('Failed to delete book');
+      showSnackbar('Failed to delete book', 'error');
     }
   };
 
@@ -307,7 +351,6 @@ const handleSubmit = async (e) => {
       description: '',
       reading_level: 'beginner',
       isbn: '',
-      cover_url: '',
       coverFile: null,
       epubFile: null,
       pdfFile: null
@@ -318,7 +361,7 @@ const handleSubmit = async (e) => {
   const handleBulkUploadComplete = () => {
     setShowBulkUpload(false);
     fetchBooks(); 
-    speak('Books uploaded successfully');
+    showSnackbar('Books uploaded successfully!', 'success');
   };
 
   const handleBulkUploadCancel = () => {
@@ -335,9 +378,75 @@ const handleSubmit = async (e) => {
 
   return (
     <div className="page-container">
+      {/* Snackbar Notification */}
+      {snackbar.show && (
+        <div className="snackbar" style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          backgroundColor: snackbar.type === 'success' ? '#10b981' : '#ef4444',
+          color: 'white',
+          padding: '12px 24px',
+          borderRadius: '8px',
+          zIndex: 9999,
+          animation: 'slideIn 0.3s ease-out',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px'
+        }}>
+          <span>{snackbar.type === 'success' ? '✅' : '❌'}</span>
+          <span>{snackbar.message}</span>
+        </div>
+      )}
+
       <div className="admin-header">
         <h1>Book Management</h1>
         <p>Manage library catalog</p>
+      </div>
+
+      {/* Search Bar */}
+      <div className="search-container" style={{ marginBottom: '20px' }}>
+        <div style={{ position: 'relative', maxWidth: '400px' }}>
+          <input
+            type="text"
+            placeholder="🔍 Search by title or author..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              border: '2px solid #e2e8f0',
+              borderRadius: '8px',
+              fontSize: '14px',
+              outline: 'none',
+              transition: 'border-color 0.2s'
+            }}
+            onFocus={(e) => e.target.style.borderColor = '#2563eb'}
+            onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              style={{
+                position: 'absolute',
+                right: '10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '16px',
+                color: '#64748b'
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        <p style={{ marginTop: '8px', fontSize: '12px', color: '#64748b' }}>
+          {filteredBooks.length} book{filteredBooks.length !== 1 ? 's' : ''} found
+        </p>
       </div>
 
       <div className="admin-actions-bar">
@@ -374,7 +483,7 @@ const handleSubmit = async (e) => {
             </tr>
           </thead>
           <tbody>
-            {books.map(book => (
+            {filteredBooks.map(book => (
               <tr key={book.id}>
                 <td>
                   <img 
@@ -383,6 +492,7 @@ const handleSubmit = async (e) => {
                     className="table-cover"
                     width="50"
                     height="70"
+                    style={{ objectFit: 'cover', borderRadius: '4px' }}
                   />
                 </td>
                 <td>{book.title}</td>
@@ -400,24 +510,40 @@ const handleSubmit = async (e) => {
                   >
                     Edit
                   </button>
-                  <button 
-                    onClick={() => handleDelete(book.id)}
-                    className="btn btn-danger btn-sm"
-                  >
-                    Delete
-                  </button>
+                  {canDelete && (
+                    <button 
+                      onClick={() => handleDelete(book.id)}
+                      className="btn btn-danger btn-sm"
+                    >
+                      Delete
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        {filteredBooks.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+            No books found matching "{searchTerm}"
+          </div>
+        )}
       </div>
 
       {/* Add/Edit Modal with File Upload */}
       {showModal && (
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
           <div className="modal modal-large">
-            <h2 id="modal-title">{editingBook ? 'Edit Book' : 'Add New Book'}</h2>
+            <div className="modal-header">
+              <h2 id="modal-title">{editingBook ? 'Edit Book' : 'Add New Book'}</h2>
+              <button 
+                onClick={() => setShowModal(false)} 
+                className="modal-close"
+                disabled={uploading}
+              >
+                ×
+              </button>
+            </div>
             
             <form onSubmit={handleSubmit} className="modal-form">
               {/* Basic Info */}
@@ -431,6 +557,7 @@ const handleSubmit = async (e) => {
                     value={formData.title}
                     onChange={handleChange}
                     required
+                    disabled={uploading}
                   />
                 </div>
                 <div className="form-group">
@@ -442,6 +569,7 @@ const handleSubmit = async (e) => {
                     value={formData.author}
                     onChange={handleChange}
                     required
+                    disabled={uploading}
                   />
                 </div>
               </div>
@@ -454,6 +582,7 @@ const handleSubmit = async (e) => {
                   value={formData.description}
                   onChange={handleChange}
                   rows="3"
+                  disabled={uploading}
                 />
               </div>
 
@@ -466,6 +595,7 @@ const handleSubmit = async (e) => {
                     value={formData.reading_level}
                     onChange={handleChange}
                     required
+                    disabled={uploading}
                   >
                     <option value="beginner">Beginner</option>
                     <option value="intermediate">Intermediate</option>
@@ -473,58 +603,71 @@ const handleSubmit = async (e) => {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label htmlFor="isbn">ISBN</label>
+                  <label htmlFor="isbn">ISBN (Optional)</label>
                   <input
                     type="text"
                     id="isbn"
                     name="isbn"
                     value={formData.isbn}
                     onChange={handleChange}
+                    disabled={uploading}
+                    placeholder="Optional"
                   />
                 </div>
               </div>
 
-              {/* Cover Image - URL or File */}
+              {/* Cover Image - REQUIRED for new books */}
               <div className="form-group">
-                <label>Cover Image *</label>
-                <div className="file-input-wrapper">
-                  <input
-                    type="text"
-                    name="cover_url"
-                    value={formData.cover_url}
-                    onChange={handleChange}
-                    required 
-                    placeholder="Or enter image URL"
-                    className="url-input"
-                  />
-                  <span className="or-divider"></span>
-                  <div
-                    {...coverDropzone.getRootProps()}
-                    className={`dropzone ${coverDropzone.isDragActive ? 'active' : ''}`}
-                  >
-                    <input {...coverDropzone.getInputProps()} />
-                    <div className="dropzone-content">
-                      {formData.coverFile ? (
-                        <div className="file-preview">
-                          <span className="file-icon">🖼️</span>
-                          <span className="file-name">{formData.coverFile.name}</span>
-                        </div>
-                      ) : (
-                        <div className="dropzone-placeholder">
-                          <span className="drop-icon">📸</span>
-                          <p>Drag & drop a cover image here, or click to select</p>
-                          <small>Supports: JPG, PNG, GIF, WebP</small>
-                          
-                        </div>
-                      )}
-                    </div>
+                <label>Cover Image {!editingBook && <span style={{ color: '#ef4444' }}>* (Required)</span>}</label>
+                <div
+                  {...coverDropzone.getRootProps()}
+                  className={`dropzone ${coverDropzone.isDragActive ? 'active' : ''}`}
+                  style={{ borderColor: !editingBook && !formData.coverFile && formData.coverFile === null ? '#ef4444' : undefined }}
+                >
+                  <input {...coverDropzone.getInputProps()} disabled={uploading} />
+                  <div className="dropzone-content">
+                    {formData.coverFile ? (
+                      <div className="file-preview">
+                        <span className="file-icon">🖼️</span>
+                        <span className="file-name">{formData.coverFile.name}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFormData(prev => ({ ...prev, coverFile: null }));
+                          }}
+                          style={{
+                            background: '#ef4444',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '4px 8px',
+                            cursor: 'pointer',
+                            marginLeft: '8px'
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="dropzone-placeholder">
+                        <span className="drop-icon">📸</span>
+                        <p>Drag & drop a cover image here, or click to select</p>
+                        <small>Supports: JPG, PNG, GIF, WebP</small>
+                      </div>
+                    )}
                   </div>
                 </div>
+                {!editingBook && !formData.coverFile && (
+                  <small style={{ color: '#ef4444', display: 'block', marginTop: '0.25rem' }}>
+                    Cover image is required for new books
+                  </small>
+                )}
               </div>
 
               {/* Book Files Section */}
               <div className="form-section">
-                <h3>Book Files</h3>
+                <h3>Book Files {!editingBook && <span style={{ color: '#ef4444' }}>(At least one required)</span>}</h3>
                 
                 {/* EPUB Upload */}
                 <div className="form-group file-upload-group">
@@ -533,12 +676,30 @@ const handleSubmit = async (e) => {
                     {...epubDropzone.getRootProps()}
                     className={`dropzone ${epubDropzone.isDragActive ? 'active' : ''}`}
                   >
-                    <input {...epubDropzone.getInputProps()} />
+                    <input {...epubDropzone.getInputProps()} disabled={uploading} />
                     <div className="dropzone-content">
                       {formData.epubFile ? (
                         <div className="file-preview">
                           <span className="file-icon">📖</span>
                           <span className="file-name">{formData.epubFile.name}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFormData(prev => ({ ...prev, epubFile: null }));
+                            }}
+                            style={{
+                              background: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              padding: '4px 8px',
+                              cursor: 'pointer',
+                              marginLeft: '8px'
+                            }}
+                          >
+                            Remove
+                          </button>
                         </div>
                       ) : (
                         <div className="dropzone-placeholder">
@@ -558,12 +719,30 @@ const handleSubmit = async (e) => {
                     {...pdfDropzone.getRootProps()}
                     className={`dropzone ${pdfDropzone.isDragActive ? 'active' : ''}`}
                   >
-                    <input {...pdfDropzone.getInputProps()} />
+                    <input {...pdfDropzone.getInputProps()} disabled={uploading} />
                     <div className="dropzone-content">
                       {formData.pdfFile ? (
                         <div className="file-preview">
                           <span className="file-icon">📄</span>
                           <span className="file-name">{formData.pdfFile.name}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFormData(prev => ({ ...prev, pdfFile: null }));
+                            }}
+                            style={{
+                              background: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              padding: '4px 8px',
+                              cursor: 'pointer',
+                              marginLeft: '8px'
+                            }}
+                          >
+                            Remove
+                          </button>
                         </div>
                       ) : (
                         <div className="dropzone-placeholder">
@@ -575,6 +754,27 @@ const handleSubmit = async (e) => {
                     </div>
                   </div>
                 </div>
+
+                {!editingBook && !formData.epubFile && !formData.pdfFile && (
+                  <small style={{ color: '#ef4444', display: 'block', marginTop: '0.5rem' }}>
+                    At least one book file (EPUB or PDF) is required for new books
+                  </small>
+                )}
+                {formData.epubFile && !formData.pdfFile && (
+                  <small style={{ color: '#10b981', display: 'block', marginTop: '0.5rem' }}>
+                    ✓ EPUB file selected
+                  </small>
+                )}
+                {!formData.epubFile && formData.pdfFile && (
+                  <small style={{ color: '#10b981', display: 'block', marginTop: '0.5rem' }}>
+                    ✓ PDF file selected
+                  </small>
+                )}
+                {formData.epubFile && formData.pdfFile && (
+                  <small style={{ color: '#10b981', display: 'block', marginTop: '0.5rem' }}>
+                    ✓ Both EPUB and PDF files selected
+                  </small>
+                )}
               </div>
 
               {/* Existing Files (when editing) */}
@@ -611,7 +811,7 @@ const handleSubmit = async (e) => {
                 <button 
                   type="submit" 
                   className="btn btn-primary"
-                  disabled={uploading}
+                  disabled={uploading || (!editingBook && (!formData.coverFile || (!formData.epubFile && !formData.pdfFile)))}
                 >
                   {uploading ? 'Uploading...' : (editingBook ? 'Update Book' : 'Add Book')}
                 </button>

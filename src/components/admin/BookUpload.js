@@ -369,19 +369,6 @@ const BookUpload = ({ onUploadComplete }) => {
                 onDrop={onDrop}
                 icon="📄"
               />
-              <Dropzone
-                id={book.id}
-                type="audio"
-                label="Audio Book (MP3)"
-                accept={{
-                  'audio/mpeg': ['.mp3'],
-                  'audio/mp3': ['.mp3'],
-                  'audio/*': ['.mp3']
-                }}
-                file={book.audioFile}
-                onDrop={onDrop}
-                icon="🎧"
-              />
             </div>
 
             {/* Progress bars */}

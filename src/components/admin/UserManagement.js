@@ -3,9 +3,12 @@ import { db } from '../../services/supabaseClient';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 import { useAccessibility } from '../../contexts/AccessibilityContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 const UserManagement = () => {
   const { speak } = useAccessibility();
+  const { profile, isAdmin } = useAuth();
+  const canChangeRoles = isAdmin();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -91,23 +94,27 @@ const UserManagement = () => {
                   <select
                     value={user.role}
                     onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                    disabled={!canChangeRoles}
                     className={`role-select role-${user.role}`}
                     aria-label={`Change role for ${user.full_name}`}
                   >
                     <option value="user">User</option>
-                    <option value="admin">Admin</option>
+                    <option value="librarian">Librarian</option>
+                    {canChangeRoles && <option value="admin">Admin</option>}
                   </select>
                 </td>
 
                 <td>{new Date(user.created_at).toLocaleDateString()}</td>
                 <td>
-                  <button 
-                    onClick={() => handleDelete(user.id)}
-                    className="btn btn-danger btn-sm"
-                    aria-label={`Delete ${user.full_name}`}
-                  >
-                    Delete
-                  </button>
+                    {canChangeRoles && (
+                      <button 
+                        onClick={() => handleDelete(user.id)}
+                        className="btn btn-danger btn-sm"
+                        aria-label={`Delete ${user.full_name}`}
+                      >
+                        Delete
+                      </button>
+                    )}
                 </td>
               </tr>
             ))}

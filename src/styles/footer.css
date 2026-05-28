@@ -1,0 +1,15 @@
+/* ==========================================
+   FOOTER
+   ========================================== */
+.footer {
+  background: var(--surface-color);
+  border-top: 1px solid var(--border-color);
+  padding: 2rem 0;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.accessibility-help {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}

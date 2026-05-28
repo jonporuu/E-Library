@@ -10,7 +10,6 @@ import { supabase, db } from '../../services/supabaseClient';
 
 import * as pdfjs from 'pdfjs-dist';
 
-
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
 
 const BookReader = () => {
@@ -36,7 +35,9 @@ const BookReader = () => {
   const [showBookmarkModal, setShowBookmarkModal] = useState(false);
   const [contentLoading, setContentLoading] = useState(false);
   const [fileSize, setFileSize] = useState(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const contentRef = useRef(null);
+  const readerContainerRef = useRef(null);
 
   const initialPage = location.state?.page || null;
 
@@ -64,7 +65,6 @@ const BookReader = () => {
     }
   }, [book, chapters, currentChapter, bookFormat, numPages]);
 
-
   useEffect(() => {
     if (bookFormat === 'pdf' && numPages && currentPage) {
       savePdfProgress();
@@ -83,6 +83,30 @@ const BookReader = () => {
       saveProgress(percent);
     }
   }, [currentChapter, chapters.length]);
+
+  // Handle fullscreen change event
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await readerContainerRef.current?.requestFullscreen();
+        setIsFullscreen(true);
+      } else {
+        await document.exitFullscreen();
+        setIsFullscreen(false);
+      }
+    } catch (err) {
+      console.error('Fullscreen error:', err);
+    }
+  };
 
   const fetchBook = async () => {
     try {
@@ -328,6 +352,11 @@ const BookReader = () => {
       if (e.key === 'ArrowLeft') handlePrevPage();
       if (e.key === 'ArrowRight') handleNextPage();
     }
+    // F key for fullscreen
+    if (e.key === 'f' || e.key === 'F') {
+      e.preventDefault();
+      toggleFullscreen();
+    }
   };
 
   useEffect(() => {
@@ -345,8 +374,24 @@ const BookReader = () => {
     : progress;
 
   return (
-    <div className="reader-container">
-      <header className="reader-header">
+    <div 
+      ref={readerContainerRef}
+      className="reader-container" 
+      style={{ 
+        ...(isFullscreen && { 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0, 
+          zIndex: 9999,
+          backgroundColor: '#fff',
+          padding: '20px',
+          overflowY: 'auto'
+        })
+      }}
+    >
+      <header className="reader-header" style={isFullscreen ? { position: 'sticky', top: 0, background: '#fff', zIndex: 100 } : {}}>
         <button 
           onClick={() => navigate('/dashboard/books')} 
           className="btn btn-icon"
@@ -356,6 +401,14 @@ const BookReader = () => {
         </button>
         <h1 className="reader-title">{book.title}</h1>
         <div className="reader-actions">
+          <button 
+            onClick={toggleFullscreen}
+            className="btn btn-icon"
+            aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            title={isFullscreen ? "Exit fullscreen (F)" : "Enter fullscreen (F)"}
+          >
+            {isFullscreen ? '🗗' : '🗖'}
+          </button>
           <button 
             onClick={() => setShowBookmarkModal(true)}
             className="btn btn-icon"
@@ -383,7 +436,13 @@ const BookReader = () => {
         ref={contentRef}
         className="book-content"
         tabIndex="-1"
-        style={{ fontSize: `${fontSize}px` }}
+        style={{ 
+          fontSize: `${fontSize}px`,
+          ...(isFullscreen && { 
+            minHeight: 'calc(100vh - 200px)',
+            padding: '40px'
+          })
+        }}
         aria-label="Book content"
       >
         {contentLoading ? (
@@ -391,7 +450,7 @@ const BookReader = () => {
             <LoadingSpinner message={bookFormat === 'pdf' ? "Loading PDF document..." : "Loading chapter content..."} />
           </div>
         ) : bookFormat === 'pdf' ? (
-          <div className="pdf-viewer">
+          <div className="pdf-viewer" style={isFullscreen ? { display: 'flex', justifyContent: 'center', alignItems: 'center' } : {}}>
             <Document
               file={pdfFile}
               onLoadSuccess={onDocumentLoadSuccess}
@@ -401,7 +460,7 @@ const BookReader = () => {
             >
               <Page
                 pageNumber={currentPage}
-                scale={1.2}
+                scale={isFullscreen ? 1.5 : 1.2}
                 renderTextLayer={false}
                 renderAnnotationLayer={false}
               />
@@ -420,6 +479,9 @@ const BookReader = () => {
         >
           ← Previous
         </button>
+        <span className="page-indicator" style={{ fontSize: '14px', color: '#666' }}>
+          Press F for fullscreen
+        </span>
         <button
           onClick={bookFormat === 'pdf' ? handleNextPage : handleNextChapter}
           disabled={bookFormat === 'pdf' ? currentPage === numPages : currentChapter === chapters.length - 1}

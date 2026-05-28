@@ -1,0 +1,51 @@
+/* ==========================================
+   DATA TABLES
+   ========================================== */
+.data-table-container {
+  overflow-x: auto;
+  background: var(--surface-color);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.data-table th {
+  background: var(--background-color);
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.data-table tr:hover {
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.table-cover {
+  border-radius: var(--radius);
+  object-fit: cover;
+}
+
+.role-select {
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  background: var(--background-color);
+  font-size: 0.875rem;
+}
+
+.role-admin { color: var(--danger-color); font-weight: 600; }
+.role-librarian { color: var(--warning-color); font-weight: 600; }
+.role-user { color: var(--success-color); }

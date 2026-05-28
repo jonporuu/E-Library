@@ -1,0 +1,119 @@
+/* ==========================================
+   HOMEPAGE STYLES
+   ========================================== */
+.landing-wrapper {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--bg-light);
+  color: var(--text-main);
+  line-height: 1.6;
+}
+
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.2rem 8%;
+  background: var(--white);
+  border-bottom: 1px solid #e1e8f5;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--primary-blue);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Hero */
+.hero {
+  padding: 100px 8% 80px;
+  background: linear-gradient(135deg, #fff 0%, #ebf2ff 100%);
+  text-align: center;
+}
+
+.hero h1 {
+  font-size: 3.5rem;
+  margin-bottom: 20px;
+  color: #1a1a1a;
+}
+
+.hero p {
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  max-width: 700px;
+  margin: 0 auto 40px;
+}
+
+.hero-btns {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+/* Features Section */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+}
+
+.feature-card {
+  background: var(--white);
+  padding: 40px;
+  border-radius: 15px;
+  border: 1px solid #eee;
+  transition: box-shadow 0.3s;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.feature-card i {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  display: block;
+}
+
+/* CTA Banner */
+.cta-banner {
+  padding: 0 8% 80px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.tip-box {
+  background-color: var(--accent-soft);
+  border-left: 5px solid var(--primary-blue);
+  padding: 25px;
+  border-radius: 10px;
+}
+
+.tip-content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.icon-blue { color: #4a90e2; }
+.icon-green { color: #27ae60; }
+.icon-red { color: #e74c3c; }

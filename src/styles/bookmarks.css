@@ -1,0 +1,60 @@
+/* ==========================================
+   BOOKMARKS
+   ========================================== */
+.bookmarks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.bookmark-card {
+  background: var(--surface-color);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  transition: all var(--transition-speed);
+}
+
+.bookmark-card:hover {
+  border-color: var(--primary-color);
+}
+
+.bookmark-content {
+  flex: 1;
+}
+
+.bookmark-content h2 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.bookmark-content h2 a {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.bookmark-content h2 a:hover {
+  color: var(--primary-color);
+}
+
+.bookmark-meta {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+}
+
+.bookmark-note {
+  font-style: italic;
+  color: var(--text-secondary);
+  border-left: 3px solid var(--primary-color);
+  padding-left: 1rem;
+  margin: 0;
+}
+
+.bookmark-actions {
+  display: flex;
+  gap: 0.5rem;
+}

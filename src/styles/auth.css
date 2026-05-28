@@ -1,0 +1,99 @@
+/* ==========================================
+   AUTH PAGES (Login, Register, Forgot Password)
+   ========================================== */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, #fffefe 0%, #000000 100%);
+}
+
+.auth-container {
+  width: 100%;
+  max-width: 480px;
+}
+
+.auth-card {
+  background: var(--background-color);
+  padding: 2.5rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.auth-card h1 {
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.auth-subtitle {
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+}
+
+.auth-form {
+  margin-bottom: 1.5rem;
+}
+
+.auth-links {
+  text-align: center;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.auth-links a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.auth-links a:hover {
+  text-decoration: underline;
+}
+
+.divider {
+  margin: 0 0.5rem;
+  color: var(--text-secondary);
+}
+
+.demo-accounts {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: var(--surface-color);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+}
+
+.demo-accounts h2 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.demo-accounts ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.demo-accounts li {
+  margin-bottom: 0.25rem;
+}
+
+/* Password strength indicator */
+.password-strength {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.password-strength-weak {
+  color: #ef4444;
+}
+
+.password-strength-medium {
+  color: #f59e0b;
+}
+
+.password-strength-strong {
+  color: #10b981;
+}

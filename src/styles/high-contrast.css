@@ -1,0 +1,62 @@
+/* ==========================================
+   HIGH CONTRAST MODE
+   ========================================== */
+.high-contrast {
+  --primary-color: #ffff00;
+  --primary-hover: #ffff00;
+  --background-color: #000000;
+  --surface-color: #000000;
+  --text-primary: #ffffff;
+  --text-secondary: #ffff00;
+  --border-color: #ffff00;
+  --shadow: none;
+}
+
+.high-contrast .book-card,
+.high-contrast .stat-card,
+.high-contrast .settings-card,
+.high-contrast .profile-card,
+.high-contrast .bookmark-card,
+.high-contrast .progress-item,
+.high-contrast .continue-reading-item,
+.high-contrast .action-card,
+.high-contrast .admin-action-card {
+  border-width: 3px;
+  border-color: #ffff00;
+}
+
+.high-contrast img {
+  filter: contrast(1.2) brightness(0.9);
+}
+
+.high-contrast .btn-primary {
+  background: #ffff00;
+  color: #000000;
+}
+
+.high-contrast .btn-secondary {
+  border-color: #ffff00;
+  color: #ffff00;
+}
+
+.high-contrast a {
+  color: #ffff00;
+}
+
+.high-contrast input,
+.high-contrast select,
+.high-contrast textarea {
+  background: #000000;
+  color: #ffffff;
+  border-color: #ffff00;
+}
+
+.high-contrast .alert-error {
+  background: #330000;
+  color: #ff6666;
+}
+
+.high-contrast .alert-success {
+  background: #003300;
+  color: #66ff66;
+}

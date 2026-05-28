@@ -28,6 +28,9 @@ import AdminDashboard from './components/admin/AdminDashboard';
 import UserManagement from './components/admin/UserManagement';
 import BookManagement from './components/admin/BookManagement';
 
+// Librarian Components
+import LibrarianDashboard from './components/librarian/LibrarianDashboard';
+
 // Accessibility
 import AccessibilitySettings from './components/accessibility/AccessibilitySettings';
 
@@ -52,7 +55,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
 
 // Role-based route wrappers
 const AdminRoute = ({ children }) => (
-  <ProtectedRoute allowedRoles={['admin']}>
+  <ProtectedRoute allowedRoles={['admin' , 'librarian']}>
     {children}
   </ProtectedRoute>
 );
@@ -228,15 +231,32 @@ function App() {
           }>
             <Route index element={<BookManagement />} />
           </Route>
+          {/* Admin Profile Route */}
+          <Route path="/admin/profile" element={
+            <AdminRoute>
+              <Layout />
+            </AdminRoute>
+          }>
+            <Route index element={<Profile />} />
+          </Route>
 
-          {/* Librarian Routes - Add these */}
-          <Route path="/librarian" element={
+          {/* Librarian Profile Route */}
+          <Route path="/librarian/profile" element={
             <ProtectedRoute allowedRoles={['librarian', 'admin']}>
               <Layout />
             </ProtectedRoute>
           }>
-            <Route index element={<AdminDashboard />} /> 
+            <Route index element={<Profile />} />
           </Route>
+
+          {/* Librarian Routes - Add these */}
+          <Route path="/librarian" element={
+          <ProtectedRoute allowedRoles={['librarian', 'admin']}>
+            <Layout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<LibrarianDashboard />} />
+        </Route>
 
           {/* Root redirect - role-based */}
           <Route path="*" element={<RootRedirect />} />
