@@ -9,8 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const BookManagement = () => {
   const { speak } = useAccessibility();
-  const { profile, isAdmin, isLibrarian } = useAuth();
-  const canDelete = isAdmin();
+  const { isAdmin, isLibrarian } = useAuth();
   const [books, setBooks] = useState([]);
   const [filteredBooks, setFilteredBooks] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,6 +20,7 @@ const BookManagement = () => {
   const [bookFormats, setBookFormats] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [snackbar, setSnackbar] = useState({ show: false, message: '', type: 'success' });
   
   // Form data including files
@@ -82,7 +82,7 @@ const BookManagement = () => {
 
   useEffect(() => {
     fetchBooks();
-  }, []);
+  }, [showArchived]);
 
   // Filter books when search term changes
   useEffect(() => {
@@ -100,7 +100,9 @@ const BookManagement = () => {
   const fetchBooks = async () => {
     try {
       setLoading(true);
-      const data = await db.getBooks();
+      const data = showArchived 
+        ? await db.getArchivedBooks() 
+        : await db.getBooks(false);
       setBooks(data);
       setFilteredBooks(data);
       setError(null);
@@ -122,199 +124,169 @@ const BookManagement = () => {
     }
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  // For new books, validate requirements
-  if (!editingBook) {
-    if (!formData.coverFile) {
-      showSnackbar('Please upload a cover image for the book', 'error');
-      return;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!editingBook) {
+      if (!formData.coverFile) {
+        showSnackbar('Please upload a cover image for the book', 'error');
+        return;
+      }
+      
+      if (!formData.epubFile && !formData.pdfFile) {
+        showSnackbar('Please upload at least one book file (EPUB or PDF)', 'error');
+        return;
+      }
     }
     
-    if (!formData.epubFile && !formData.pdfFile) {
-      showSnackbar('Please upload at least one book file (EPUB or PDF)', 'error');
-      return;
-    }
-  }
-  
-  setUploading(true);
+    setUploading(true);
 
-  try {
-    if (!formData.title || !formData.author) {
-      showSnackbar('Please fill in title and author', 'error');
-      setUploading(false);
-      return;
-    }
+    try {
+      if (!formData.title || !formData.author) {
+        showSnackbar('Please fill in title and author', 'error');
+        setUploading(false);
+        return;
+      }
 
-    let isbnValue = formData.isbn;
-    if (!isbnValue || isbnValue.trim() === '') {
-      isbnValue = null;
-    }
+      let isbnValue = formData.isbn;
+      if (!isbnValue || isbnValue.trim() === '') {
+        isbnValue = null;
+      }
 
-    let coverUrl = '';
+      let coverUrl = '';
 
-    // Upload cover file if selected
-    if (formData.coverFile) {
-      console.log('Uploading cover for:', formData.title);
+      if (formData.coverFile) {
+        const timestamp = Date.now();
+        const safeFileName = formData.coverFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const coverPath = `${timestamp}_${safeFileName}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('book-covers')
+          .upload(coverPath, formData.coverFile, { upsert: true });
+        
+        if (uploadError) throw new Error(`Failed to upload cover: ${uploadError.message}`);
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('book-covers')
+          .getPublicUrl(coverPath);
+        coverUrl = publicUrl;
+      }
+
+      let bookId;
+      if (editingBook) {
+        if (isbnValue) {
+          const { data: existingBook } = await supabase
+            .from('books')
+            .select('id')
+            .eq('isbn', isbnValue)
+            .neq('id', editingBook.id)
+            .maybeSingle();
+          
+          if (existingBook) {
+            showSnackbar('This ISBN is already used by another book.', 'error');
+            setUploading(false);
+            return;
+          }
+        }
+        
+        const updateData = {
+          title: formData.title,
+          author: formData.author,
+          description: formData.description,
+          reading_level: formData.reading_level,
+          isbn: isbnValue
+        };
+        
+        if (coverUrl) updateData.cover_url = coverUrl;
+        
+        await db.updateBook(editingBook.id, updateData);
+        bookId = editingBook.id;
+        showSnackbar('Book updated successfully!', 'success');
+      } else {
+        if (isbnValue) {
+          const { data: existingBook } = await supabase
+            .from('books')
+            .select('id')
+            .eq('isbn', isbnValue)
+            .maybeSingle();
+          
+          if (existingBook) {
+            showSnackbar('A book with this ISBN already exists.', 'error');
+            setUploading(false);
+            return;
+          }
+        }
+        
+        const newBook = await db.createBook({
+          title: formData.title,
+          author: formData.author,
+          description: formData.description,
+          reading_level: formData.reading_level,
+          isbn: isbnValue, 
+          cover_url: coverUrl,
+          status: 'available'
+        });
+        bookId = newBook.id;
+        showSnackbar('Book created successfully!', 'success');
+      }
+
       const timestamp = Date.now();
-      const safeFileName = formData.coverFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const coverPath = `${timestamp}_${safeFileName}`;
       
-      const { error: uploadError } = await supabase.storage
-        .from('book-covers')
-        .upload(coverPath, formData.coverFile, { upsert: true });
-      
-      if (uploadError) {
-        console.error('Cover upload error:', uploadError);
-        throw new Error(`Failed to upload cover: ${uploadError.message}`);
-      }
-      
-      const { data: { publicUrl } } = supabase.storage
-        .from('book-covers')
-        .getPublicUrl(coverPath);
-      coverUrl = publicUrl;
-      console.log('Cover uploaded successfully:', publicUrl);
-    }
-
-    // Create or update book
-    let bookId;
-    if (editingBook) {
-      console.log('Updating book:', editingBook.id);
-      
-      // For updates, check if the ISBN is being used by another book
-      if (isbnValue) {
-        const { data: existingBook } = await supabase
-          .from('books')
-          .select('id')
-          .eq('isbn', isbnValue)
-          .neq('id', editingBook.id)
-          .maybeSingle();
+      if (formData.epubFile) {
+        const safeFileName = formData.epubFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const epubPath = `${bookId}/epub/${timestamp}_${safeFileName}`;
         
-        if (existingBook) {
-          showSnackbar('This ISBN is already used by another book. Please use a different ISBN or leave it blank.', 'error');
-          setUploading(false);
-          return;
-        }
-      }
-      
-      const updateData = {
-        title: formData.title,
-        author: formData.author,
-        description: formData.description,
-        reading_level: formData.reading_level,
-        isbn: isbnValue
-      };
-      
-      // Only update cover if a new one was uploaded
-      if (coverUrl) {
-        updateData.cover_url = coverUrl;
-      }
-      
-      const updatedBook = await db.updateBook(editingBook.id, updateData);
-      
-      console.log('Update response:', updatedBook);
-      bookId = editingBook.id;
-      showSnackbar('Book updated successfully!', 'success');
-    } else {
-      console.log('Creating new book');
-      
-      // For new books, check if ISBN already exists
-      if (isbnValue) {
-        const { data: existingBook } = await supabase
-          .from('books')
-          .select('id')
-          .eq('isbn', isbnValue)
-          .maybeSingle();
+        const { error: epubError } = await supabase.storage
+          .from('book-files')
+          .upload(epubPath, formData.epubFile);
         
-        if (existingBook) {
-          showSnackbar('A book with this ISBN already exists. Please use a different ISBN or leave it blank.', 'error');
-          setUploading(false);
-          return;
-        }
+        if (epubError) throw new Error(`Failed to upload EPUB: ${epubError.message}`);
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('book-files')
+          .getPublicUrl(epubPath);
+        
+        await db.addBookFormat({
+          book_id: bookId,
+          format_type: 'epub',
+          file_url: publicUrl,
+          file_size: formData.epubFile.size
+        });
       }
-      
-      const newBook = await db.createBook({
-        title: formData.title,
-        author: formData.author,
-        description: formData.description,
-        reading_level: formData.reading_level,
-        isbn: isbnValue, 
-        cover_url: coverUrl,
-        status: 'available'
-      });
-      bookId = newBook.id;
-      showSnackbar('Book created successfully!', 'success');
-    }
 
-    // Upload new book files (EPUB/PDF) if selected
-    const timestamp = Date.now();
-    
-    if (formData.epubFile) {
-      console.log('Uploading EPUB for:', formData.title);
-      const safeFileName = formData.epubFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const epubPath = `${bookId}/epub/${timestamp}_${safeFileName}`;
-      
-      const { error: epubError } = await supabase.storage
-        .from('book-files')
-        .upload(epubPath, formData.epubFile);
-      
-      if (epubError) {
-        console.error('EPUB upload error:', epubError);
-        throw new Error(`Failed to upload EPUB: ${epubError.message}`);
+      if (formData.pdfFile) {
+        const safeFileName = formData.pdfFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const pdfPath = `${bookId}/pdf/${timestamp}_${safeFileName}`;
+        
+        const { error: pdfError } = await supabase.storage
+          .from('book-files')
+          .upload(pdfPath, formData.pdfFile);
+        
+        if (pdfError) throw new Error(`Failed to upload PDF: ${pdfError.message}`);
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('book-files')
+          .getPublicUrl(pdfPath);
+        
+        await db.addBookFormat({
+          book_id: bookId,
+          format_type: 'pdf',
+          file_url: publicUrl,
+          file_size: formData.pdfFile.size
+        });
       }
-      
-      const { data: { publicUrl } } = supabase.storage
-        .from('book-files')
-        .getPublicUrl(epubPath);
-      
-      await db.addBookFormat({
-        book_id: bookId,
-        format_type: 'epub',
-        file_url: publicUrl,
-        file_size: formData.epubFile.size
-      });
-      console.log('EPUB uploaded successfully');
-    }
 
-    if (formData.pdfFile) {
-      console.log('Uploading PDF for:', formData.title);
-      const safeFileName = formData.pdfFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const pdfPath = `${bookId}/pdf/${timestamp}_${safeFileName}`;
-      
-      const { error: pdfError } = await supabase.storage
-        .from('book-files')
-        .upload(pdfPath, formData.pdfFile);
-      
-      if (pdfError) {
-        console.error('PDF upload error:', pdfError);
-        throw new Error(`Failed to upload PDF: ${pdfError.message}`);
-      }
-      
-      const { data: { publicUrl } } = supabase.storage
-        .from('book-files')
-        .getPublicUrl(pdfPath);
-      
-      await db.addBookFormat({
-        book_id: bookId,
-        format_type: 'pdf',
-        file_url: publicUrl,
-        file_size: formData.pdfFile.size
-      });
-      console.log('PDF uploaded successfully');
+      setShowModal(false);
+      setEditingBook(null);
+      resetForm();
+      await fetchBooks();
+    } catch (err) {
+      console.error('Error saving book:', err);
+      showSnackbar(`Failed to save book: ${err.message}`, 'error');
+    } finally {
+      setUploading(false);
     }
-
-    setShowModal(false);
-    setEditingBook(null);
-    resetForm();
-    await fetchBooks();
-  } catch (err) {
-    console.error('Error saving book:', err);
-    showSnackbar(`Failed to save book: ${err.message}`, 'error');
-  } finally {
-    setUploading(false);
-  }
-};
+  };
 
   const handleEdit = (book) => {
     setEditingBook(book);
@@ -332,15 +304,27 @@ const handleSubmit = async (e) => {
     setShowModal(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this book?')) return;
+  const handleArchive = async (id, bookTitle) => {
+    if (!window.confirm(`Are you sure you want to archive "${bookTitle}"?\n\nIt will be hidden from users but can be restored later.`)) return;
     
     try {
-      await db.deleteBook(id);
-      setBooks(books.filter(b => b.id !== id));
-      showSnackbar('Book deleted successfully', 'success');
+      await db.archiveBook(id);
+      showSnackbar(`"${bookTitle}" archived successfully`, 'success');
+      await fetchBooks();
     } catch (err) {
-      showSnackbar('Failed to delete book', 'error');
+      showSnackbar('Failed to archive book', 'error');
+    }
+  };
+
+  const handleRestore = async (id, bookTitle) => {
+    if (!window.confirm(`Restore "${bookTitle}" back to the active library?`)) return;
+    
+    try {
+      await db.restoreBook(id);
+      showSnackbar(`"${bookTitle}" restored successfully`, 'success');
+      await fetchBooks();
+    } catch (err) {
+      showSnackbar('Failed to restore book', 'error');
     }
   };
 
@@ -402,50 +386,79 @@ const handleSubmit = async (e) => {
 
       <div className="admin-header">
         <h1>Book Management</h1>
-        <p>Manage library catalog</p>
+        <p>{showArchived ? 'Viewing archived books' : 'Manage library catalog'}</p>
       </div>
 
-      {/* Search Bar */}
+      {/* Search Bar & Archive Toggle */}
       <div className="search-container" style={{ marginBottom: '20px' }}>
-        <div style={{ position: 'relative', maxWidth: '400px' }}>
-          <input
-            type="text"
-            placeholder="🔍 Search by title or author..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              border: '2px solid #e2e8f0',
-              borderRadius: '8px',
-              fontSize: '14px',
-              outline: 'none',
-              transition: 'border-color 0.2s'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#2563eb'}
-            onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', maxWidth: '400px', flex: 1 }}>
+            <input
+              type="text"
+              placeholder="🔍 Search by title or author..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               style={{
-                position: 'absolute',
-                right: '10px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '16px',
-                color: '#64748b'
+                width: '100%',
+                padding: '12px 16px',
+                border: '2px solid #e2e8f0',
+                borderRadius: '8px',
+                fontSize: '14px',
+                outline: 'none',
+                transition: 'border-color 0.2s'
               }}
-            >
-              ✕
-            </button>
-          )}
+              onFocus={(e) => e.target.style.borderColor = '#2563eb'}
+              onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  color: '#64748b'
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          
+          {/* Archive Toggle Button */}
+          <button 
+            onClick={() => {
+              setShowArchived(!showArchived);
+              setSearchTerm('');
+            }}
+            className="btn"
+            style={{
+              backgroundColor: showArchived ? '#f59e0b' : '#64748b',
+              color: 'white',
+              padding: '12px 20px',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: '500',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              whiteSpace: 'nowrap'
+            }}
+            aria-pressed={showArchived}
+          >
+            <span>{showArchived ? '📁' : '📦'}</span>
+            {showArchived ? 'View Active Books' : 'View Archived Books'}
+          </button>
         </div>
         <p style={{ marginTop: '8px', fontSize: '12px', color: '#64748b' }}>
           {filteredBooks.length} book{filteredBooks.length !== 1 ? 's' : ''} found
+          {showArchived && ' (archived)'}
         </p>
       </div>
 
@@ -458,12 +471,14 @@ const handleSubmit = async (e) => {
               setShowModal(true); 
             }}
             className="btn btn-primary"
+            disabled={showArchived}
           >
             + Add Single Book
           </button>
           <button 
             onClick={() => setShowBulkUpload(true)}
             className="btn btn-secondary"
+            disabled={showArchived}
           >
             📚 Bulk Upload Books
           </button>
@@ -471,7 +486,7 @@ const handleSubmit = async (e) => {
       </div>
 
       <div className="data-table-container">
-        <table className="data-table" role="table" aria-label="Books list">
+        <table className="data-table" role="table" aria-label={showArchived ? 'Archived books list' : 'Active books list'}>
           <thead>
             <tr>
               <th scope="col">Cover</th>
@@ -479,12 +494,13 @@ const handleSubmit = async (e) => {
               <th scope="col">Author</th>
               <th scope="col">Level</th>
               <th scope="col">Status</th>
+              {showArchived && <th scope="col">Archived Date</th>}
               <th scope="col">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredBooks.map(book => (
-              <tr key={book.id}>
+              <tr key={book.id} style={book.archived ? { opacity: '0.7', backgroundColor: '#fef3c7' } : {}}>
                 <td>
                   <img 
                     src={book.cover_url} 
@@ -502,22 +518,63 @@ const handleSubmit = async (e) => {
                     {book.reading_level}
                   </span>
                 </td>
-                <td>{book.status}</td>
                 <td>
-                  <button 
-                    onClick={() => handleEdit(book)}
-                    className="btn btn-secondary btn-sm"
-                  >
-                    Edit
-                  </button>
-                  {canDelete && (
-                    <button 
-                      onClick={() => handleDelete(book.id)}
-                      className="btn btn-danger btn-sm"
-                    >
-                      Delete
-                    </button>
-                  )}
+                  <span style={{
+                    padding: '4px 8px',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    backgroundColor: book.archived ? '#fef3c7' : '#d1fae5',
+                    color: book.archived ? '#92400e' : '#065f46'
+                  }}>
+                    {book.archived ? '📦 Archived' : book.status || 'Available'}
+                  </span>
+                </td>
+                {showArchived && (
+                  <td style={{ fontSize: '12px', color: '#64748b' }}>
+                    {book.archived_at ? new Date(book.archived_at).toLocaleDateString() : 'N/A'}
+                  </td>
+                )}
+                <td>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {!book.archived && (
+                      <button 
+                        onClick={() => handleEdit(book)}
+                        className="btn btn-secondary btn-sm"
+                        title="Edit book"
+                      >
+                        ✏️ Edit
+                      </button>
+                    )}
+                    
+                    {book.archived ? (
+                      <button 
+                        onClick={() => handleRestore(book.id, book.title)}
+                        className="btn btn-sm"
+                        style={{
+                          backgroundColor: '#10b981',
+                          color: 'white',
+                          border: 'none'
+                        }}
+                        title="Restore book"
+                      >
+                        ↩️ Restore
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => handleArchive(book.id, book.title)}
+                        className="btn btn-sm"
+                        style={{
+                          backgroundColor: '#f59e0b',
+                          color: 'white',
+                          border: 'none'
+                        }}
+                        title="Archive book"
+                      >
+                        📦 Archive
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -525,12 +582,15 @@ const handleSubmit = async (e) => {
         </table>
         {filteredBooks.length === 0 && (
           <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-            No books found matching "{searchTerm}"
+            {showArchived 
+              ? 'No archived books found' 
+              : `No books found matching "${searchTerm}"`
+            }
           </div>
         )}
       </div>
 
-      {/* Add/Edit Modal with File Upload */}
+      {/* Add/Edit Modal */}
       {showModal && (
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
           <div className="modal modal-large">
@@ -546,7 +606,6 @@ const handleSubmit = async (e) => {
             </div>
             
             <form onSubmit={handleSubmit} className="modal-form">
-              {/* Basic Info */}
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="title">Title *</label>
@@ -616,13 +675,11 @@ const handleSubmit = async (e) => {
                 </div>
               </div>
 
-              {/* Cover Image - REQUIRED for new books */}
               <div className="form-group">
                 <label>Cover Image {!editingBook && <span style={{ color: '#ef4444' }}>* (Required)</span>}</label>
                 <div
                   {...coverDropzone.getRootProps()}
                   className={`dropzone ${coverDropzone.isDragActive ? 'active' : ''}`}
-                  style={{ borderColor: !editingBook && !formData.coverFile && formData.coverFile === null ? '#ef4444' : undefined }}
                 >
                   <input {...coverDropzone.getInputProps()} disabled={uploading} />
                   <div className="dropzone-content">
@@ -658,18 +715,11 @@ const handleSubmit = async (e) => {
                     )}
                   </div>
                 </div>
-                {!editingBook && !formData.coverFile && (
-                  <small style={{ color: '#ef4444', display: 'block', marginTop: '0.25rem' }}>
-                    Cover image is required for new books
-                  </small>
-                )}
               </div>
 
-              {/* Book Files Section */}
               <div className="form-section">
                 <h3>Book Files {!editingBook && <span style={{ color: '#ef4444' }}>(At least one required)</span>}</h3>
                 
-                {/* EPUB Upload */}
                 <div className="form-group file-upload-group">
                   <label>EPUB File</label>
                   <div
@@ -712,7 +762,6 @@ const handleSubmit = async (e) => {
                   </div>
                 </div>
 
-                {/* PDF Upload */}
                 <div className="form-group file-upload-group">
                   <label>PDF File</label>
                   <div
@@ -754,30 +803,8 @@ const handleSubmit = async (e) => {
                     </div>
                   </div>
                 </div>
-
-                {!editingBook && !formData.epubFile && !formData.pdfFile && (
-                  <small style={{ color: '#ef4444', display: 'block', marginTop: '0.5rem' }}>
-                    At least one book file (EPUB or PDF) is required for new books
-                  </small>
-                )}
-                {formData.epubFile && !formData.pdfFile && (
-                  <small style={{ color: '#10b981', display: 'block', marginTop: '0.5rem' }}>
-                    ✓ EPUB file selected
-                  </small>
-                )}
-                {!formData.epubFile && formData.pdfFile && (
-                  <small style={{ color: '#10b981', display: 'block', marginTop: '0.5rem' }}>
-                    ✓ PDF file selected
-                  </small>
-                )}
-                {formData.epubFile && formData.pdfFile && (
-                  <small style={{ color: '#10b981', display: 'block', marginTop: '0.5rem' }}>
-                    ✓ Both EPUB and PDF files selected
-                  </small>
-                )}
               </div>
 
-              {/* Existing Files (when editing) */}
               {editingBook && bookFormats.length > 0 && (
                 <div className="form-section">
                   <h3>Existing Files</h3>

@@ -135,22 +135,40 @@ const mockData = {
 let mockUser = null;
 
 // Database operations with error handling and mock fallback
-export const db = {
-  // Books
-  getBooks: async () => {
+    export const db = {
+      // Books
+   getBooks: async (includeArchived = false) => {
     try {
-      if (DEBUG) console.log('📚 Fetching books...');
-      const { data, error } = await supabase
+      if (DEBUG) console.log('📚 Fetching books... (includeArchived:', includeArchived, ')');
+      
+      let query = supabase
         .from('books')
         .select('*')
         .order('created_at', { ascending: false });
       
+      // Filter out archived books by default
+      if (!includeArchived) {
+        query = query.or('archived.is.null,archived.eq.false');
+      }
+      
+      const { data, error } = await query;
+      
       if (error) throw error;
       if (DEBUG) console.log('✅ Books fetched:', data?.length);
-      return data || mockData.books;
+      
+      // Ensure all books have archived field
+      const processedData = (data || []).map(book => ({
+        ...book,
+        archived: book.archived === true  
+      }));
+      
+      if (!includeArchived) {
+        return processedData.filter(b => !b.archived);
+      }
+      return processedData;
     } catch (e) {
       if (DEBUG) console.log('⚠️ Using mock books:', e.message);
-      return mockData.books;
+      return mockData.books.filter(b => includeArchived ? true : !b.archived);
     }
   },
   
@@ -173,9 +191,9 @@ export const db = {
   createBook: async (book) => {
     try {
       // Handle ISBN - make it optional or generate unique one
-      const bookData = { ...book };
+      const bookData = { ...book, archived: false, archived_at: null };
       if (!bookData.isbn || bookData.isbn.trim() === '') {
-        bookData.isbn = null; // Allow null ISBNs
+        bookData.isbn = null; 
       }
 
       const { data, error } = await supabase
@@ -194,7 +212,7 @@ export const db = {
         bookData.isbn = `MOCK-${Date.now()}`; // Generate unique mock ISBN
       }
       
-      const newBook = { ...bookData, id: generateMockId(), created_at: new Date().toISOString() };
+      const newBook = { ...bookData, id: generateMockId(), created_at: new Date().toISOString(), archived: false  };
       mockData.books.push(newBook);
       return newBook;
     }
@@ -225,18 +243,91 @@ export const db = {
   }
 },
   
-  deleteBook: async (id) => {
+archiveBook: async (id) => {
+  try {
+    
+    const { data, error } = await supabase
+      .from('books')
+      .update({ 
+        archived: true,
+        archived_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select();
+    
+    if (error) {
+      console.error('Archive error:', error);
+      throw error;
+    }
+    
+
+    return data?.[0];
+  } catch (e) {
+    // Mock fallback
+    const book = mockData.books.find(b => b.id === id);
+    if (book) {
+      book.archived = true;
+      book.archived_at = new Date().toISOString();
+    }
+    return book;
+  }
+},
+
+restoreBook: async (id) => {
+  try {
+    
+    const { data, error } = await supabase
+      .from('books')
+      .update({ 
+        archived: false,
+        archived_at: null
+      })
+      .eq('id', id)
+      .select();
+    
+    if (error) {
+      console.error('Restore error:', error);
+      throw error;
+    }
+    
+    return data?.[0];
+  } catch (e) {
+    // Mock fallback
+    const book = mockData.books.find(b => b.id === id);
+    if (book) {
+      book.archived = false;
+      book.archived_at = null;
+    }
+    return book;
+  }
+},
+
+  // Get archived books only
+  getArchivedBooks: async () => {
     try {
-      const { error } = await supabase
-        .from('books')
-        .delete()
-        .eq('id', id);
       
-      if (error) throw error;
-      return true;
+      const { data, error } = await supabase
+        .from('books')
+        .select('*')
+        .eq('archived', true)  
+        .order('archived_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching archived books:', error);
+        throw error;
+      }
+      
+      
+      // Ensure archived field is properly set
+      const archivedBooks = (data || []).map(book => ({
+        ...book,
+        archived: true  
+      }));
+      
+      return archivedBooks;
     } catch (e) {
-      mockData.books = mockData.books.filter(b => b.id !== id);
-      return true;
+      if (DEBUG) console.log('⚠️ Using mock archived books:', e.message);
+      return mockData.books.filter(b => b.archived === true);
     }
   },
   
@@ -683,3 +774,6 @@ export const storage = {
     }
   }
 };
+
+window.supabase = supabase;
+window.db = db;
