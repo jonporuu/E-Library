@@ -24,6 +24,7 @@ const HomePage = () => {
         const { data, error } = await supabase
           .from('books')
           .select('id, title, author, cover_url, reading_level')
+          .or('archived.is.null,archived.eq.false')
           .limit(6) // Show only 6 books on homepage
           .order('created_at', { ascending: false });
         
