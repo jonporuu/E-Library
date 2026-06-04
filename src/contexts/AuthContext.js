@@ -47,6 +47,20 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
+  const refreshProfile = async () => {
+    if (user) {
+      try {
+        const updatedProfile = await db.getProfile(user.id);
+        setProfile(updatedProfile);
+        return updatedProfile;
+      } catch (error) {
+        console.error('Failed to refresh profile:', error);
+        return null;
+      }
+    }
+    return null;
+  };
+
   const value = {
     signUp: async (email, password, metadata) => {
       console.log('📝 Signup attempt:', email);
@@ -95,6 +109,8 @@ export const AuthProvider = ({ children }) => {
     user,
     profile,
     loading,
+    refreshProfile,  
+    
     isAdmin: () => {
       const isAdmin = profile?.role === 'admin';
       console.log('🔍 isAdmin check:', profile?.role, '→', isAdmin);

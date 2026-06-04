@@ -2,15 +2,14 @@ import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL
 const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY 
-// Create client with lock options disabled
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    // Disable the lock mechanism that causes the error
     lock: false,
-    storageKey: 'sb-library-auth-token' // Custom storage key
+    storageKey: 'sb-library-auth-token' 
   }
 })
 

@@ -227,7 +227,7 @@ const LibrarianDashboard = () => {
       alert('Book created successfully!');
       setShowAddBookModal(false);
       resetForm();
-      fetchDashboardData(); // Refresh the list
+      fetchDashboardData(); 
       
     } catch (err) {
       console.error('Error saving book:', err);
@@ -251,21 +251,21 @@ const LibrarianDashboard = () => {
         <div className="stat-card">
           <span className="stat-icon">📚</span>
           <span className="stat-value">{stats.totalBooks}</span>
-          <span className="stat-label">Total Books</span>
+          <span className="stat-label">Total Books </span>
           <Link to="/dashboard/books" className="stat-link">Browse →</Link>
         </div>
         
         <div className="stat-card">
           <span className="stat-icon">👥</span>
           <span className="stat-value">{stats.totalUsers}</span>
-          <span className="stat-label">Library Members</span>
+          <span className="stat-label">Library Members </span>
           <span className="stat-link">{stats.totalUsers} total</span>
         </div>
         
         <div className="stat-card">
           <span className="stat-icon">🔖</span>
           <span className="stat-value">{stats.totalBookmarks}</span>
-          <span className="stat-label">Bookmarks</span>
+          <span className="stat-label">Bookmarks </span>
           <span className="stat-link">Across library</span>
         </div>
       </div>

@@ -15,7 +15,6 @@ export const useAccessibility = () => {
 export const AccessibilityProvider = ({ children }) => {
   const { user } = useAuth();
   
-  // Minimal settings - just font size for readability (optional)
   const [fontSize, setFontSize] = useState(16);
 
   // Load settings from database on mount

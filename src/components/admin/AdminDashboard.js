@@ -53,13 +53,13 @@ const AdminDashboard = () => {
         <div className="stat-card admin-stat">
           <span className="stat-icon" aria-hidden="true">👥</span>
           <span className="stat-value">{stats.totalUsers}</span>
-          <span className="stat-label">Total Users</span>
-          <Link to="/admin/users" className="stat-link">Manage Users →</Link>
+          <span className="stat-label">Total Users </span>
+          <Link to="/admin/users" className="stat-link"> Manage Users →</Link>
         </div>
         <div className="stat-card admin-stat">
           <span className="stat-icon" aria-hidden="true">📚</span>
           <span className="stat-value">{stats.totalBooks}</span>
-          <span className="stat-label">Total Books</span>
+          <span className="stat-label">Total Books </span>
           <Link to="/admin/books" className="stat-link">Manage Books →</Link>
         </div>
         <div className="stat-card admin-stat">

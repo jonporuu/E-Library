@@ -352,7 +352,6 @@ const BookReader = () => {
       if (e.key === 'ArrowLeft') handlePrevPage();
       if (e.key === 'ArrowRight') handleNextPage();
     }
-    // F key for fullscreen
     if (e.key === 'f' || e.key === 'F') {
       e.preventDefault();
       toggleFullscreen();

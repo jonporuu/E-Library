@@ -25,7 +25,7 @@ const HomePage = () => {
           .from('books')
           .select('id, title, author, cover_url, reading_level')
           .or('archived.is.null,archived.eq.false')
-          .limit(6) // Show only 6 books on homepage
+          .limit(6) 
           .order('created_at', { ascending: false });
         
         if (error) throw error;

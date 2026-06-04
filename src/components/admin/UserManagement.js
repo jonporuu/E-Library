@@ -64,14 +64,7 @@ const UserManagement = () => {
         <p>Manage user accounts and permissions</p>
       </div>
 
-      <div className="admin-actions-bar">
-        <button 
-          onClick={() => setShowAddModal(true)}
-          className="btn btn-primary"
-        >
-          + Add User
-        </button>
-      </div>
+
 
       <div className="data-table-container">
         <table className="data-table" role="table" aria-label="Users list">

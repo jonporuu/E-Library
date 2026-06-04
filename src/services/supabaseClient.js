@@ -3,10 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
 const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
-// Debug mode - set to false in production
+
 const DEBUG = false;
 
-// Generate a simple UUID-like string for mock data
+
 const generateMockId = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     const r = Math.random() * 16 | 0;
@@ -24,7 +24,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-// Mock data for development fallback
+// Mock data 
 const mockData = {
   books: [
     {
@@ -124,7 +124,6 @@ const mockData = {
   bookmarks: []
 };
 
-// Mock authentication state
 let mockUser = null;
 
 // Database operations with error handling and mock fallback
