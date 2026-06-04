@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { db } from '../../services/supabaseClient';
+import { db, supabase } from '../../services/supabaseClient';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { useAccessibility } from '../../contexts/AccessibilityContext';
 
@@ -20,17 +20,29 @@ const AdminDashboard = () => {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const [users, books, progress] = await Promise.all([
+      
+      // Fetch all data in parallel
+      const [users, books] = await Promise.all([
         db.getAllProfiles(),
-        db.getBooks(),
-        Promise.resolve([])
+        db.getBooks(true)  
       ]);
 
+      // Get ALL reading progress to count unique active readers
+      const { data: allProgress } = await supabase
+        .from('reading_progress')
+        .select('user_id');
+
+      // Count unique users who have reading progress
+      const uniqueReaders = allProgress 
+        ? new Set(allProgress.map(p => p.user_id)).size 
+        : 0;
+
       setStats({
-        totalUsers: users.length,
-        totalBooks: books.length,
-        activeReaders: new Set(progress.map(p => p.user_id)).size
+        totalUsers: users?.length || 0,
+        totalBooks: books?.length || 0,
+        activeReaders: uniqueReaders
       });
+      
       speak('Admin dashboard loaded');
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -54,14 +66,12 @@ const AdminDashboard = () => {
           <span className="stat-icon" aria-hidden="true">👥</span>
           <span className="stat-value">{stats.totalUsers}</span>
           <span className="stat-label">Total Users </span>
-          <Link to="/admin/users" className="stat-link"> Manage Users →</Link>
         </div>
         <div className="stat-card admin-stat">
           <span className="stat-icon" aria-hidden="true">📚</span>
           <span className="stat-value">{stats.totalBooks}</span>
           <span className="stat-label">Total Books </span>
-          <Link to="/admin/books" className="stat-link">Manage Books →</Link>
-        </div>
+          </div>
         <div className="stat-card admin-stat">
           <span className="stat-icon" aria-hidden="true">📖</span>
           <span className="stat-value">{stats.activeReaders}</span>
@@ -83,7 +93,7 @@ const AdminDashboard = () => {
             <h3>Book Management</h3>
             <p>Add new books, update metadata, manage catalog</p>
           </Link>
-          <Link to="/books" className="admin-action-card">
+          <Link to="/dashboard/books" className="admin-action-card">
             <span className="action-icon" aria-hidden="true">📖</span>
             <h3>View Library</h3>
             <p>Browse the library as a user would see it</p>

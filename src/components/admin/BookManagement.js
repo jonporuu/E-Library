@@ -718,7 +718,7 @@ const BookManagement = () => {
               </div>
 
               <div className="form-section">
-                <h3>Book Files {!editingBook && <span style={{ color: '#ef4444' }}>(At least one required)</span>}</h3>
+                <h3>Book Files {!editingBook && <small style={{ color: '#ef4444'  }}>(At least one book file (EPUB or PDF) is required)</small>}</h3>
                 
                 <div className="form-group file-upload-group">
                   <label>EPUB File</label>

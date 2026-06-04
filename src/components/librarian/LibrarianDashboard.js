@@ -6,6 +6,7 @@ import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 import { useDropzone } from 'react-dropzone';
 
+
 const LibrarianDashboard = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
@@ -67,28 +68,32 @@ const LibrarianDashboard = () => {
     fetchDashboardData();
   }, []);
 
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      
-      const books = await db.getBooks();
-      const users = await db.getAllProfiles();
-      const bookmarks = await db.getBookmarks(profile?.id);
-      
-      setStats({
-        totalBooks: books?.length || 0,
-        totalUsers: users?.length || 0,
-        totalBookmarks: bookmarks?.length || 0
-      });
-      
-      setRecentBooks(books?.slice(0, 5) || []);
-      
-    } catch (err) {
-      console.error('Error fetching dashboard data:', err);
-      setError('Failed to load dashboard data');
-    } finally {
-      setLoading(false);
-    }
+const fetchDashboardData = async () => {
+  try {
+    setLoading(true);
+    
+    const books = await db.getBooks();
+    const users = await db.getAllProfiles();
+    
+    // Get ALL bookmarks from all users
+    const { data: allBookmarks } = await supabase
+      .from('bookmarks')
+      .select('*');
+    
+    setStats({
+      totalBooks: books?.length || 0,
+      totalUsers: users?.length || 0,
+      totalBookmarks: allBookmarks?.length || 0  
+    });
+    
+    setRecentBooks(books?.slice(0, 5) || []);
+    
+  } catch (err) {
+    console.error('Error fetching dashboard data:', err);
+    setError('Failed to load dashboard data');
+  } finally {
+    setLoading(false);
+  }
   };
 
   const handleChange = (e) => {
@@ -252,14 +257,12 @@ const LibrarianDashboard = () => {
           <span className="stat-icon">📚</span>
           <span className="stat-value">{stats.totalBooks}</span>
           <span className="stat-label">Total Books </span>
-          <Link to="/dashboard/books" className="stat-link">Browse →</Link>
         </div>
         
         <div className="stat-card">
           <span className="stat-icon">👥</span>
           <span className="stat-value">{stats.totalUsers}</span>
           <span className="stat-label">Library Members </span>
-          <span className="stat-link">{stats.totalUsers} total</span>
         </div>
         
         <div className="stat-card">
@@ -452,7 +455,7 @@ const LibrarianDashboard = () => {
 
               {/* Book Files Section - REQUIRED (at least one) */}
               <div className="form-section">
-                <h3>Book Files <span style={{ color: '#ef4444' }}>(At least one required)</span></h3>
+                <h3>Book Files</h3>
                 
                 {/* EPUB Upload */}
                 <div className="form-group file-upload-group">
@@ -541,9 +544,9 @@ const LibrarianDashboard = () => {
                 </div>
 
                 {!formData.epubFile && !formData.pdfFile && (
-                  <small style={{ color: '#ef4444', display: 'block', marginTop: '0.5rem' }}>
+                  <large style={{ color: '#ef4444', display: 'block', marginTop: '0.5rem' }}>
                     At least one book file (EPUB or PDF) is required
-                  </small>
+                  </large>
                 )}
                 {formData.epubFile && !formData.pdfFile && (
                   <small style={{ color: '#10b981', display: 'block', marginTop: '0.5rem' }}>

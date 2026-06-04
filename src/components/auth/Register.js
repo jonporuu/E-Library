@@ -21,10 +21,12 @@ const Register = () => {
   const { speak } = useAccessibility();
   const navigate = useNavigate();
 
+  // Allowed email domains
+  const ALLOWED_DOMAIN = '@cvsu.edu.ph';
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear error when user types
     if (error) setError('');
     if (success) setSuccess('');
   };
@@ -52,10 +54,24 @@ const Register = () => {
     return errors;
   };
 
+  // Email domain validation
+  const validateEmailDomain = (email) => {
+    if (!email) return true; // Don't show error for empty field
+    return email.toLowerCase().endsWith(ALLOWED_DOMAIN);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    // Validate email domain
+    if (!formData.email.toLowerCase().endsWith(ALLOWED_DOMAIN)) {
+      const msg = `Only ${ALLOWED_DOMAIN} email addresses are allowed to register`;
+      setError(msg);
+      speak(msg);
+      return;
+    }
 
     // Check if passwords match
     if (formData.password !== formData.confirmPassword) {
@@ -96,9 +112,11 @@ const Register = () => {
       }, 2000);
       
     } catch (err) {
-      console.error('Registration error:', err);
-      setError('Failed to create account. Please try again.');
-      speak('Registration failed. Please try again.');
+       console.error('Registration error:', err);
+      // Show the actual error message from Supabase
+      const errorMessage = err?.message || err?.error_description || 'Failed to create account. Please try again.';
+      setError(errorMessage);
+      speak(errorMessage);
       setLoading(false);
     }
   };
@@ -124,6 +142,7 @@ const Register = () => {
   };
 
   const strength = getPasswordStrength();
+  const isEmailValid = validateEmailDomain(formData.email);
 
   return (
     <div className="auth-page">
@@ -171,7 +190,12 @@ const Register = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="email">Email Address *</label>
+              <label htmlFor="email">
+                Email Address *
+                <span style={{ fontSize: '0.75rem', color: '#64748b', marginLeft: '8px' }}>
+                  (Only {ALLOWED_DOMAIN})
+                </span>
+              </label>
               <input
                 type="email"
                 id="email"
@@ -181,7 +205,22 @@ const Register = () => {
                 required
                 autoComplete="email"
                 disabled={loading}
+                placeholder={`yourname${ALLOWED_DOMAIN}`}
+                style={{
+                  borderColor: formData.email && !isEmailValid ? '#ef4444' : undefined
+                }}
               />
+              {/* Email domain validation feedback */}
+              {formData.email && !isEmailValid && (
+                <small style={{ color: '#ef4444', display: 'block', marginTop: '0.25rem' }}>
+                  ❌ Only {ALLOWED_DOMAIN} email addresses are allowed
+                </small>
+              )}
+              {formData.email && isEmailValid && (
+                <small style={{ color: '#10b981', display: 'block', marginTop: '0.25rem' }}>
+                  ✓ Valid CvSU email address
+                </small>
+              )}
             </div>
 
             <div className="form-group">
@@ -303,7 +342,7 @@ const Register = () => {
             <button 
               type="submit" 
               className="btn btn-primary btn-block"
-              disabled={loading}
+              disabled={loading || (formData.email && !isEmailValid)}
               aria-busy={loading}
             >
               {loading ? 'Creating Account...' : 'Create Account'}
