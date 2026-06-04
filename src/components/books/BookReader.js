@@ -363,6 +363,52 @@ const BookReader = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentChapter, chapters.length, currentPage, numPages, bookFormat]);
 
+useEffect(() => {
+  let touchStartX = 0;
+  let touchEndX = 0;
+
+  const handleTouchStart = (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+  };
+
+  const handleTouchEnd = (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    const swipeDistance = touchStartX - touchEndX;
+    
+    // Minimum swipe distance of 50px
+    if (Math.abs(swipeDistance) < 50) return;
+    
+    if (swipeDistance > 0) {
+      // Swipe left = next
+      if (bookFormat === 'pdf') {
+        if (currentPage < numPages) setCurrentPage(prev => prev + 1);
+      } else {
+        if (currentChapter < chapters.length - 1) setCurrentChapter(prev => prev + 1);
+      }
+    } else {
+      // Swipe right = previous
+      if (bookFormat === 'pdf') {
+        if (currentPage > 1) setCurrentPage(prev => prev - 1);
+      } else {
+        if (currentChapter > 0) setCurrentChapter(prev => prev - 1);
+      }
+    }
+  };
+
+  const contentElement = contentRef.current;
+  if (contentElement) {
+    contentElement.addEventListener('touchstart', handleTouchStart);
+    contentElement.addEventListener('touchend', handleTouchEnd);
+  }
+
+  return () => {
+    if (contentElement) {
+      contentElement.removeEventListener('touchstart', handleTouchStart);
+      contentElement.removeEventListener('touchend', handleTouchEnd);
+    }
+  };
+  }, [bookFormat, currentChapter, currentPage, numPages, chapters.length]);
+
   if (loading) return <LoadingSpinner message="Loading book..." fullScreen />;
   if (error) return <ErrorMessage message={error} onRetry={fetchBook} showHomeLink />;
   if (!book) return <ErrorMessage message="Book not found" showHomeLink />;
@@ -459,7 +505,8 @@ const BookReader = () => {
             >
               <Page
                 pageNumber={currentPage}
-                scale={isFullscreen ? 1.5 : 1.2}
+                scale={isFullscreen ? 1.5 : window.innerWidth < 768 ? 1.0 : 1.2}
+                width={window.innerWidth < 768 ? window.innerWidth - 40 : undefined}
                 renderTextLayer={false}
                 renderAnnotationLayer={false}
               />

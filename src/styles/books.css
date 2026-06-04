@@ -140,3 +140,26 @@
   margin-bottom: 1.5rem;
   font-size: 1.125rem;
 }
+
+@media (max-width: 480px) {
+  .books-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .book-info {
+    padding: 0.75rem;
+  }
+
+  .book-title {
+    font-size: 0.85rem;
+  }
+
+  .book-author {
+    font-size: 0.75rem;
+  }
+
+  .level-badge {
+    font-size: 0.65rem;
+  }
+}

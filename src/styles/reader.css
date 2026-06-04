@@ -140,3 +140,230 @@
   max-width: 100%;
   height: auto !important;
 }
+
+
+@media (max-width: 768px) {
+  .reader-container {
+    max-width: 100%;
+    padding: 0 0.5rem;
+  }
+
+  .reader-header {
+    padding: 0.75rem 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+  }
+
+  .reader-header .btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  .reader-title {
+    font-size: 1rem;
+    padding: 0 0.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .reader-actions {
+    gap: 0.25rem;
+  }
+
+  .reader-actions .btn-icon {
+    padding: 0.5rem;
+    min-width: 40px;
+    min-height: 40px;
+    font-size: 1rem;
+  }
+
+  .progress-container {
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .progress-text {
+    font-size: 0.75rem;
+  }
+
+  /* Book content -  */
+  .book-content {
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    min-height: 50vh;
+    border-radius: 12px;
+    font-size: 16px !important; 
+    line-height: 1.7;
+  }
+
+  .book-content h2 {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+  }
+
+  .book-content h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .book-content p {
+    margin-bottom: 1rem;
+    text-align: left; 
+  }
+
+  /* Reader navigation */
+  .reader-nav {
+    position: sticky;
+    bottom: 0;
+    background: var(--background-color, #fff);
+    padding: 0.75rem;
+    margin-bottom: 0;
+    border-top: 2px solid var(--border-color);
+    z-index: 10;
+    gap: 0.5rem;
+  }
+
+  .reader-nav .btn {
+    flex: 1;
+    padding: 0.75rem;
+    font-size: 0.9rem;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+  }
+
+  .page-indicator {
+    font-size: 0.75rem;
+    display: none; 
+  }
+
+  .reader-help {
+    font-size: 0.75rem;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* PDF Viewer on mobile */
+  .pdf-viewer {
+    min-height: 40vh;
+  }
+
+  .pdf-viewer .react-pdf__Page {
+    max-width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .pdf-viewer .react-pdf__Page__canvas {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Loading */
+  .loading-container {
+    min-height: 40vh;
+  }
+}
+
+/* ===== SMALL PHONES (up to 480px) ===== */
+@media (max-width: 480px) {
+  .reader-header {
+    padding: 0.5rem;
+  }
+
+  .reader-header .btn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .reader-title {
+    font-size: 0.85rem;
+    max-width: 120px;
+  }
+
+  .book-content {
+    padding: 1rem;
+    font-size: 15px !important;
+    line-height: 1.6;
+    border-radius: 8px;
+  }
+
+  .book-content h2 {
+    font-size: 1.15rem;
+  }
+
+  .book-content h3 {
+    font-size: 1rem;
+  }
+
+  .reader-nav {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .reader-nav .btn {
+    padding: 0.6rem;
+    font-size: 0.8rem;
+    border-radius: 8px;
+  }
+
+  /* PDF smaller screens */
+  .pdf-viewer {
+    min-height: 30vh;
+  }
+
+  /* Progress bar */
+  .progress-container {
+    padding: 0.5rem;
+  }
+
+  .progress-bar {
+    height: 6px;
+  }
+}
+
+/*  LANDSCAPE MODE  */
+@media (max-width: 896px) and (orientation: landscape) {
+  .reader-container {
+    max-width: 100%;
+    padding: 0 0.5rem;
+  }
+
+  .reader-header {
+    padding: 0.5rem;
+  }
+
+  .book-content {
+    padding: 1rem 1.5rem;
+    min-height: 30vh;
+  }
+
+  .reader-nav {
+    padding: 0.5rem;
+  }
+}
+
+/* FULLSCREEN MODE MOBILE */
+@media (max-width: 768px) {
+  .reader-container[style*="position: fixed"] {
+    padding: 10px !important;
+  }
+
+  .reader-container[style*="position: fixed"] .book-content {
+    min-height: calc(100vh - 180px) !important;
+    padding: 20px !important;
+    font-size: 18px !important;
+  }
+
+  .reader-container[style*="position: fixed"] .reader-header {
+    padding: 10px !important;
+  }
+
+  .reader-container[style*="position: fixed"] .reader-nav {
+    border-radius: 12px 12px 0 0;
+  }
+}
