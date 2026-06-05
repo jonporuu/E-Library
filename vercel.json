@@ -4,10 +4,8 @@
   "devCommand": "npm start",
   "installCommand": "npm install",
   "framework": "create-react-app",
-  "rewrites": [
-    {
-      "source": "/((?!static|asset-manifest|manifest|favicon|logo).*)",
-      "destination": "/index.html"
-    }
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
