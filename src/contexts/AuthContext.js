@@ -95,8 +95,8 @@ export const AuthProvider = ({ children }) => {
     user,
     profile,
     loading,
-    setProfile,        // ← ADDED: needed for Profile component
-    refreshProfile,    // ← Already there
+    setProfile,        
+    refreshProfile,    
     
     isAdmin: () => {
       return profile?.role === 'admin';
