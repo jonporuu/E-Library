@@ -2,9 +2,11 @@ import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { db, supabase } from '../../services/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 
 const BookUpload = ({ onUploadComplete }) => {
   const { profile } = useAuth();
+  const toast = useToast();
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
   const [books, setBooks] = useState([
@@ -61,7 +63,7 @@ const BookUpload = ({ onUploadComplete }) => {
   const onDrop = useCallback((acceptedFiles, rejectedFiles, id, type) => {
     if (rejectedFiles.length > 0) {
       console.warn('Rejected files:', rejectedFiles);
-      alert(`Some files were rejected. Please check file type and size.`);
+      toast.show(`Some files were rejected. Please check file type and size.`);
       return;
     }
 
@@ -107,7 +109,7 @@ const BookUpload = ({ onUploadComplete }) => {
     console.log('BookUpload - Can upload check:', canUpload);
 
     if (!canUpload) {
-      alert('Only librarians and admins can upload books');
+      toast.show('Only librarians and admins can upload books');
       return;
     }
 
@@ -120,14 +122,14 @@ const BookUpload = ({ onUploadComplete }) => {
         console.log('Processing book:', book.title);
 
         if (!book.title || !book.author) {
-          alert(`Please fill in title and author for all books`);
+          toast.show(`Please fill in title and author for all books`);
           setUploading(false);
           return;
         }
 
         // Validate that at least one file is selected
         if (!book.coverFile && !book.epubFile && !book.pdfFile && !book.audioFile) {
-          alert(`Please select at least one file (cover, EPUB, PDF, or audio) for "${book.title}"`);
+          toast.show(`Please select at least one file (cover, EPUB, PDF, or audio) for "${book.title}"`);
           setUploading(false);
           return;
         }
@@ -210,9 +212,9 @@ const BookUpload = ({ onUploadComplete }) => {
         }
       }
 
-      alert('Books uploaded successfully!');
+      toast.show('Books uploaded successfully!');
       onUploadComplete?.();
-      
+     
       // Reset form
       setBooks([{
         id: Date.now(),
@@ -229,7 +231,7 @@ const BookUpload = ({ onUploadComplete }) => {
       }]);
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Upload failed: ' + error.message);
+      toast.show('Upload failed: ' + error.message);
     } finally {
       setUploading(false);
       setUploadProgress({});
@@ -255,8 +257,8 @@ const BookUpload = ({ onUploadComplete }) => {
             <div className="book-header">
               <h3>Book #{index + 1}</h3>
               {books.length > 1 && (
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="btn btn-danger btn-sm"
                   onClick={() => removeBook(book.id)}
                 >
@@ -389,17 +391,17 @@ const BookUpload = ({ onUploadComplete }) => {
         ))}
 
         <div className="upload-actions">
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="btn btn-secondary"
             onClick={addBook}
             disabled={uploading}
           >
             + Add Another Book
           </button>
-          
-          <button 
-            type="submit" 
+         
+          <button
+            type="submit"
             className="btn btn-primary btn-large"
             disabled={uploading}
           >

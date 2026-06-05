@@ -4,6 +4,8 @@ import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 import { useAccessibility } from '../../contexts/AccessibilityContext';
 import { useAuth } from '../../contexts/AuthContext';
+import ConfirmToast from '../common/ConfirmToast';
+
 
 const UserManagement = () => {
   const { speak } = useAccessibility();
@@ -14,6 +16,13 @@ const UserManagement = () => {
   const [error, setError] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+
+  const [confirmState, setConfirmState] = useState({
+  show: false,
+  message: '',
+  onConfirm: null,
+  type: 'danger'
+  });
 
   useEffect(() => {
     fetchUsers();
@@ -43,15 +52,21 @@ const UserManagement = () => {
     }
   };
 
-  const handleDelete = async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
-    
-    try {
-      setUsers(users.filter(u => u.id !== userId));
-      speak('User deleted');
-    } catch (err) {
-      speak('Failed to delete user');
-    }
+  const handleDelete = (userId) => {
+    setConfirmState({
+      show: true,
+      message: 'Are you sure you want to delete this user?',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          setUsers(users.filter(u => u.id !== userId));
+          speak('User deleted');
+        } catch (err) {
+          speak('Failed to delete user');
+        }
+        setConfirmState({ show: false });
+      }
+    });
   };
 
   if (loading) return <LoadingSpinner />;
@@ -73,7 +88,7 @@ const UserManagement = () => {
               <th scope="col">Name</th>
               <th scope="col">Email</th>
               <th scope="col">Role</th>
-              
+             
               <th scope="col">Joined</th>
               <th scope="col">Actions</th>
             </tr>
@@ -100,7 +115,7 @@ const UserManagement = () => {
                 <td>{new Date(user.created_at).toLocaleDateString()}</td>
                 <td>
                     {canChangeRoles && (
-                      <button 
+                      <button
                         onClick={() => handleDelete(user.id)}
                         className="btn btn-danger btn-sm"
                         aria-label={`Delete ${user.full_name}`}
@@ -129,6 +144,30 @@ const UserManagement = () => {
           </div>
         </div>
       )}
+      {confirmState.show && (
+        <>
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              zIndex: 9999
+            }}
+            onClick={() => setConfirmState({ show: false })}
+          />
+          <ConfirmToast
+            message={confirmState.message}
+            type={confirmState.type}
+            onConfirm={confirmState.onConfirm}
+            onCancel={() => setConfirmState({ show: false })}
+            confirmText={confirmState.type === 'danger' ? 'Delete' : 'Confirm'}
+          />
+        </>
+      )}
+
     </div>
   );
 };

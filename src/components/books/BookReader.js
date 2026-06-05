@@ -7,6 +7,8 @@ import { useAccessibility } from '../../contexts/AccessibilityContext';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 import { supabase, db } from '../../services/supabaseClient';
+import { useToast } from '../../contexts/ToastContext';
+
 
 import * as pdfjs from 'pdfjs-dist';
 
@@ -18,7 +20,7 @@ const BookReader = () => {
   const location = useLocation();
   const { user } = useAuth();
   const { fontSize } = useAccessibility();
-  
+  const toast = useToast();
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -89,7 +91,7 @@ const BookReader = () => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
     };
-    
+   
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
@@ -185,7 +187,7 @@ const BookReader = () => {
     try {
       console.log('Loading PDF from:', pdfUrl);
       setContentLoading(true);
-      
+     
       setPdfFile(pdfUrl);
       setContentLoading(false);
     } catch (error) {
@@ -277,26 +279,26 @@ const BookReader = () => {
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
     console.log('PDF loaded successfully, pages:', numPages);
-    
+   
     if (initialPage && initialPage > 0 && initialPage <= numPages) {
       setCurrentPage(initialPage);
     }
-    
+   
     setContentLoading(false);
   };
 
   const savePdfProgress = () => {
     if (!numPages) return;
-    
+   
     let percent;
     if (currentPage === numPages) {
       percent = 100;
     } else {
       percent = Math.round((currentPage / numPages) * 100);
     }
-    
+   
     console.log(`Saving PDF progress: Page ${currentPage}/${numPages} = ${percent}%`);
-    
+   
     setProgress(percent);
     db.updateReadingProgress(user.id, id, {
       last_position: currentPage - 1,
@@ -308,7 +310,7 @@ const BookReader = () => {
     try {
       const progressData = await db.getReadingProgress(user.id);
       const bookProgress = progressData.find(p => p.book_id === id);
-      
+     
       if (bookProgress && !initialPage) {
         if (bookFormat === 'epub') {
           const savedChapter = bookProgress.last_position || 0;
@@ -332,15 +334,15 @@ const BookReader = () => {
       await db.createBookmark({
         user_id: user.id,
         book_id: id,
-        location: bookFormat === 'pdf' ? currentPage : currentChapter, 
+        location: bookFormat === 'pdf' ? currentPage : currentChapter,
         note: bookmarkNote
       });
       setShowBookmarkModal(false);
       setBookmarkNote('');
-      alert('Bookmark saved!');
+      toast.show('Bookmark saved!');
     } catch (err) {
       console.error('Failed to add bookmark');
-      alert('Failed to save bookmark');
+      toast.show('Failed to save bookmark');
     }
   };
 
@@ -374,10 +376,10 @@ useEffect(() => {
   const handleTouchEnd = (e) => {
     touchEndX = e.changedTouches[0].screenX;
     const swipeDistance = touchStartX - touchEndX;
-    
+   
     // Minimum swipe distance of 50px
     if (Math.abs(swipeDistance) < 50) return;
-    
+   
     if (swipeDistance > 0) {
       // Swipe left = next
       if (bookFormat === 'pdf') {
@@ -419,16 +421,16 @@ useEffect(() => {
     : progress;
 
   return (
-    <div 
+    <div
       ref={readerContainerRef}
-      className="reader-container" 
-      style={{ 
-        ...(isFullscreen && { 
-          position: 'fixed', 
-          top: 0, 
-          left: 0, 
-          right: 0, 
-          bottom: 0, 
+      className="reader-container"
+      style={{
+        ...(isFullscreen && {
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
           zIndex: 9999,
           backgroundColor: '#fff',
           padding: '20px',
@@ -437,8 +439,8 @@ useEffect(() => {
       }}
     >
       <header className="reader-header" style={isFullscreen ? { position: 'sticky', top: 0, background: '#fff', zIndex: 100 } : {}}>
-        <button 
-          onClick={() => navigate('/dashboard/books')} 
+        <button
+          onClick={() => navigate('/dashboard/books')}
           className="btn btn-icon"
           aria-label="Back to book list"
         >
@@ -446,7 +448,7 @@ useEffect(() => {
         </button>
         <h1 className="reader-title">{book.title}</h1>
         <div className="reader-actions">
-          <button 
+          <button
             onClick={toggleFullscreen}
             className="btn btn-icon"
             aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
@@ -454,7 +456,7 @@ useEffect(() => {
           >
             {isFullscreen ? '🗗' : '🗖'}
           </button>
-          <button 
+          <button
             onClick={() => setShowBookmarkModal(true)}
             className="btn btn-icon"
             aria-label="Add bookmark"
@@ -481,9 +483,9 @@ useEffect(() => {
         ref={contentRef}
         className="book-content"
         tabIndex="-1"
-        style={{ 
+        style={{
           fontSize: `${fontSize}px`,
-          ...(isFullscreen && { 
+          ...(isFullscreen && {
             minHeight: 'calc(100vh - 200px)',
             padding: '40px'
           })

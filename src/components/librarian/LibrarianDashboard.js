@@ -5,10 +5,12 @@ import { db, supabase } from '../../services/supabaseClient';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 import { useDropzone } from 'react-dropzone';
+import { useToast } from '../../contexts/ToastContext';
 
 
 const LibrarianDashboard = () => {
   const { profile } = useAuth();
+  const toast = useToast();
   const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalBooks: 0,
@@ -119,13 +121,13 @@ const fetchDashboardData = async () => {
     
     // Validate cover image is required
     if (!formData.coverFile) {
-      alert('Please upload a cover image for the book');
+      toast.show('Please upload a cover image for the book');
       return;
     }
 
     // Validate at least one book file (EPUB or PDF) is required
     if (!formData.epubFile && !formData.pdfFile) {
-      alert('Please upload at least one book file (EPUB or PDF)');
+      toast.show('Please upload at least one book file (EPUB or PDF)');
       return;
     }
 
@@ -133,7 +135,7 @@ const fetchDashboardData = async () => {
 
     try {
       if (!formData.title || !formData.author) {
-        alert('Please fill in title and author');
+        toast.show('Please fill in title and author');
         setUploading(false);
         return;
       }
@@ -229,14 +231,14 @@ const fetchDashboardData = async () => {
         });
       }
 
-      alert('Book created successfully!');
+      toast.show('Book created successfully!');
       setShowAddBookModal(false);
       resetForm();
       fetchDashboardData(); 
       
     } catch (err) {
       console.error('Error saving book:', err);
-      alert(`Failed to save book: ${err.message}`);
+      toast.show(`Failed to save book: ${err.message}`);
     } finally {
       setUploading(false);
     }

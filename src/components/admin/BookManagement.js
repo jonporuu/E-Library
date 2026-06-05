@@ -6,6 +6,7 @@ import ErrorMessage from '../common/ErrorMessage';
 import { useAccessibility } from '../../contexts/AccessibilityContext';
 import BookUpload from './BookUpload';
 import { useAuth } from '../../contexts/AuthContext';
+import ConfirmToast from '../common/ConfirmToast';
 
 const BookManagement = () => {
   const { speak } = useAccessibility();
@@ -22,6 +23,14 @@ const BookManagement = () => {
   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [snackbar, setSnackbar] = useState({ show: false, message: '', type: 'success' });
+
+
+  const [confirmState, setConfirmState] = useState({
+  show: false,
+  message: '',
+  onConfirm: null,
+  type: 'warning'
+  });
   
   // Form data including files
   const [formData, setFormData] = useState({
@@ -304,28 +313,40 @@ const BookManagement = () => {
     setShowModal(true);
   };
 
-  const handleArchive = async (id, bookTitle) => {
-    if (!window.confirm(`Are you sure you want to archive "${bookTitle}"?\n\nIt will be hidden from users but can be restored later.`)) return;
-    
-    try {
-      await db.archiveBook(id);
-      showSnackbar(`"${bookTitle}" archived successfully`, 'success');
-      await fetchBooks();
-    } catch (err) {
-      showSnackbar('Failed to archive book', 'error');
+  const handleArchive = (id, bookTitle) => {
+  setConfirmState({
+    show: true,
+    message: `Are you sure you want to archive "${bookTitle}"?\n\nIt will be hidden from users but can be restored later.`,
+    type: 'warning',
+    onConfirm: async () => {
+      try {
+        await db.archiveBook(id);
+        showSnackbar(`"${bookTitle}" archived successfully`, 'success');
+        await fetchBooks();
+      } catch (err) {
+        showSnackbar('Failed to archive book', 'error');
+      }
+      setConfirmState({ show: false });
     }
+  });
   };
 
-  const handleRestore = async (id, bookTitle) => {
-    if (!window.confirm(`Restore "${bookTitle}" back to the active library?`)) return;
-    
-    try {
-      await db.restoreBook(id);
-      showSnackbar(`"${bookTitle}" restored successfully`, 'success');
-      await fetchBooks();
-    } catch (err) {
-      showSnackbar('Failed to restore book', 'error');
+  const handleRestore = (id, bookTitle) => {
+  setConfirmState({
+    show: true,
+    message: `Restore "${bookTitle}" back to the active library?`,
+    type: 'info',
+    onConfirm: async () => {
+      try {
+        await db.restoreBook(id);
+        showSnackbar(`"${bookTitle}" restored successfully`, 'success');
+        await fetchBooks();
+      } catch (err) {
+        showSnackbar('Failed to restore book', 'error');
+      }
+      setConfirmState({ show: false });
     }
+  });
   };
 
   const resetForm = () => {
@@ -866,6 +887,15 @@ const BookManagement = () => {
           </div>
         </div>
       )}
+      {confirmState.show && (
+    <ConfirmToast
+      message={confirmState.message}
+      type={confirmState.type}
+      onConfirm={confirmState.onConfirm}
+      onCancel={() => setConfirmState({ show: false })}
+      confirmText={confirmState.type === 'danger' ? 'Delete' : 'Confirm'}
+    />
+    )}
     </div>
   );
 };

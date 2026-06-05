@@ -33,6 +33,7 @@ import LibrarianDashboard from './components/librarian/LibrarianDashboard';
 
 // Accessibility
 import AccessibilitySettings from './components/accessibility/AccessibilitySettings';
+import { ToastProvider } from './contexts/ToastContext';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -126,6 +127,7 @@ function App() {
 
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <ToastProvider>
       <div className={`app ${highContrast ? 'high-contrast' : ''}`}>
         <Routes>
           {/* PUBLIC ROUTES */}
@@ -262,6 +264,7 @@ function App() {
           <Route path="*" element={<RootRedirect />} />
         </Routes>
       </div>
+      </ToastProvider>
     </Router>
   );
 }

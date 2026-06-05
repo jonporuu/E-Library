@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { storage, db } from '../../services/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 
 const FileUpload = ({ bookId, onUploadComplete }) => {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const { profile } = useAuth();
+  const toast = useToast();
 
   const handleFileUpload = async (event, format) => {
     try {
@@ -14,7 +16,7 @@ const FileUpload = ({ bookId, onUploadComplete }) => {
 
       // Check permissions
       if (!['admin', 'librarian'].includes(profile?.role)) {
-        alert('Only librarians and admins can upload files');
+        toast.show('Only librarians and admins can upload files');
         return;
       }
 
@@ -23,7 +25,7 @@ const FileUpload = ({ bookId, onUploadComplete }) => {
 
       // Upload to storage
       const result = await storage.uploadBookFile(file, bookId, format);
-      
+     
       // Save to database
       await db.addBookFormat({
         book_id: bookId,
@@ -35,10 +37,10 @@ const FileUpload = ({ bookId, onUploadComplete }) => {
 
       setProgress(100);
       onUploadComplete?.();
-      alert('File uploaded successfully!');
+      toast.show('File uploaded successfully!');
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Upload failed: ' + error.message);
+      toast.show('Upload failed: ' + error.message);
     } finally {
       setUploading(false);
     }
@@ -47,7 +49,7 @@ const FileUpload = ({ bookId, onUploadComplete }) => {
   return (
     <div className="file-upload">
       <h3>Upload Book Files</h3>
-      
+     
       <div className="upload-section">
         <label>EPUB Format:</label>
         <input
