@@ -19,61 +19,30 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // Get current session
+        // Get session from Supabase (persists across refresh)
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
-          console.log('👤 Session found:', session.user.email);
           setUser(session.user);
           
           try {
-            const profile = await db.getProfile(session.user.id);
-            console.log('✅ Profile loaded:', profile?.full_name);
-            setProfile(profile);
+            const profileData = await db.getProfile(session.user.id);
+            setProfile(profileData);
           } catch (profileErr) {
             console.error('❌ Profile fetch failed:', profileErr);
             setProfile(null);
           }
-        } else {
-          console.log('👤 No session found');
-          setUser(null);
-          setProfile(null);
         }
       } catch (error) {
         console.error('❌ Auth initialization error:', error);
-        setUser(null);
-        setProfile(null);
       } finally {
         setLoading(false);
       }
     };
 
     initializeAuth();
-
-    // Listen for auth state changes (login, logout, password reset)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('🔄 Auth state changed:', event);
-        
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          setUser(session?.user || null);
-          if (session?.user) {
-            const profile = await db.getProfile(session.user.id);
-            setProfile(profile);
-          }
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setProfile(null);
-        }
-      }
-    );
-
-    return () => {
-      subscription?.unsubscribe();
-    };
   }, []);
 
-  // Refresh profile function (used after profile updates)
   const refreshProfile = async () => {
     if (user) {
       try {
@@ -95,21 +64,26 @@ export const AuthProvider = ({ children }) => {
     },
     
     signIn: async (email, password) => {
-      const data = await auth.signIn(email, password);
-      
-      setUser(data.user);
-      
-      if (data?.user) {
-        try {
-          const profile = await db.getProfile(data.user.id);
-          setProfile(profile);
-        } catch (profileErr) {
-          console.error('⚠️ Profile fetch failed:', profileErr);
-          setProfile(null);
+      try {
+        const data = await auth.signIn(email, password);
+        
+        setUser(data.user);
+        
+        if (data?.user) {
+          try {
+            const profileData = await db.getProfile(data.user.id);
+            setProfile(profileData);
+          } catch (profileErr) {
+            console.error('⚠️ Profile fetch failed:', profileErr);
+            setProfile(null);
+          }
         }
+        
+        return data;
+      } catch (err) {
+        console.error('❌ SignIn FAILED:', err);
+        throw err;
       }
-      
-      return data;
     },
     
     signOut: async () => {
@@ -121,10 +95,12 @@ export const AuthProvider = ({ children }) => {
     user,
     profile,
     loading,
-    setProfile,
-    refreshProfile,
+    setProfile,        // ← ADDED: needed for Profile component
+    refreshProfile,    // ← Already there
     
-    isAdmin: () => profile?.role === 'admin',
+    isAdmin: () => {
+      return profile?.role === 'admin';
+    },
     isLibrarian: () => profile?.role === 'librarian' || profile?.role === 'admin',
     hasRole: (role) => {
       if (role === 'admin') return profile?.role === 'admin';
