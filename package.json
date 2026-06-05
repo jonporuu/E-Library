@@ -2,7 +2,7 @@
   "name": "e-library-pwd",
   "version": "1.0.0",
   "private": true,
-  "homepage": ".",
+  "homepage": "/",
   "dependencies": {
     "@supabase/supabase-js": "^2.97.0",
     "epubjs": "^0.3.93",
