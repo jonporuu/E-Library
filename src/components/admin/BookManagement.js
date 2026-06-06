@@ -535,8 +535,19 @@ const BookManagement = () => {
                 <td>{book.title}</td>
                 <td>{book.author}</td>
                 <td>
-                  <span className={`level-badge level-${book.reading_level}`}>
-                    {book.reading_level}
+                  <span style={{
+                    padding: '4px 10px',
+                    borderRadius: '20px',
+                    fontSize: '0.75rem',
+                    fontWeight: '700',
+                    textTransform: 'uppercase',
+                    color: 'white',
+                    backgroundColor: 
+                      book.reading_level === 'beginner' ? '#10b981' :
+                      book.reading_level === 'intermediate' ? '#f59e0b' :
+                      book.reading_level === 'advanced' ? '#ef4444' : '#6b7280'
+                  }}>
+                    {book.reading_level || 'N/A'}
                   </span>
                 </td>
                 <td>
