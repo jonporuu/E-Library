@@ -163,8 +163,8 @@ const HomePage = () => {
             />
             <FeatureCard 
               icon="fa-cloud-download-alt" 
-              title="Offline Access" 
-              description="Download your favorite resources and study anytime, even without an internet connection."
+              title="Reading Progress Tracking" 
+              description="Track percentage completed for each book."
             />
             <FeatureCard 
               icon="fa-user-graduate" 
